@@ -27,23 +27,44 @@ const {
   membershipRevokeHandler,
   membershipAcceptHandler,
   membershipRejectHandler,
-  configureHandler,
-  objectReadHandler
+  objectReadHandler,
+  walletConfigureHandler,
+  walletGenerateHandler,
+  walletImportHandler
 } = require('./handlers');
 
 clear();
 console.log(
-    figlet.textSync('Akord', { horizontalLayout: 'full' })
+  figlet.textSync('Akord', { horizontalLayout: 'full' })
 );
 
-const configureCommand = {
-  command: 'configure <key-file>',
-  describe: 'setup keyfile',
+const walletConfigureCommand = {
+  command: 'wallet:configure <key-file>',
+  describe: 'configure the wallet with the JSON keyfile',
   builder: () => {
     yargs
       .positional('key-file', { describe: 'path to the JSON wallet key file' })
   },
-  handler: configureHandler,
+  handler: walletConfigureHandler,
+};
+
+const walletGenerateCommand = {
+  command: 'wallet:generate',
+  describe: 'generate a new wallet & configure the CLI',
+  builder: () => {
+    yargs
+  },
+  handler: walletGenerateHandler,
+};
+
+const walletImportCommand = {
+  command: 'wallet:import <mnemonic>',
+  describe: 'import the wallet from the mnemonic',
+  builder: () => {
+    yargs
+      .positional('mnemonic', { describe: '12-word seed phrase' })
+  },
+  handler: walletImportHandler,
 };
 
 const vaultCreateCommand = {
@@ -284,13 +305,15 @@ const objectReadCommand = {
   describe: 'compute & decrypt the current object state',
   builder: () => {
     yargs
-    .positional('objectId', { describe: 'object id' })
+      .positional('objectId', { describe: 'object id' })
   },
   handler: objectReadHandler,
 };
 
 yargs
-  .command(configureCommand)
+  .command(walletConfigureCommand)
+  .command(walletGenerateCommand)
+  .command(walletImportCommand)
   .command(vaultCreateCommand)
   .command(vaultRenameCommand)
   .command(vaultArchiveCommand)

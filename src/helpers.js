@@ -94,7 +94,8 @@ async function postContractTransaction(contractId, input, tags, wallet) {
   try {
     const contract = getContract(contractId, wallet);
     const pstTransfer = await preparePstRewardTransfer(wallet);
-    return contract.writeInteraction(input, getTagsFromObject(tags), pstTransfer, true);
+    const txId = await contract.writeInteraction(input, getTagsFromObject(tags), pstTransfer, true);
+    return { txId, pstTransfer }
   } catch (error) {
     console.log(error)
     throw new Error("Cannot perform the operation: " + error);

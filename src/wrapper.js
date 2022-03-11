@@ -70,6 +70,10 @@ module.exports = (function () {
       let bodyPayload = body ? body : {}
       let headerPayload = header ? header : {}
 
+      let response = {
+        transactions: []
+      };
+
       if (this.vaultContract) {
         const state = await this.getLatestVaultState();
         this.setDataEncryptionPublicKey(state.publicKeys[state.publicKeys.length - 1]);
@@ -85,6 +89,11 @@ module.exports = (function () {
             constructHeader(),
             this.wallet.wallet
           );
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.VAULT,
+            "id": contractTxId,
+          })
           headerPayload[svpTags.COMMAND] = commands.VAULT_CREATE;
           bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           bodyPayload.keyRotate = {
@@ -103,6 +112,11 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
               [svpTags.MEMBER_ADDRESS]: address
             }, this.wallet.wallet);
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.MEMBERSHIP,
+            "id": membershipContractTxId,
+          })
           const memberPublicKey = await this.wallet.getPublicKey();
           await this.setKeysEncryptionPublicKey(memberPublicKey);
           this.setRawDataEncryptionPublicKey(publicKey);
@@ -132,6 +146,11 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
               [svpTags.MEMBER_ADDRESS]: bodyPayload.address
             }, this.wallet.wallet);
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.MEMBERSHIP,
+            "id": membershipContractTxId,
+          })
           this.setContractId(membershipContractTxId);
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = membershipContractTxId;
@@ -189,6 +208,11 @@ module.exports = (function () {
             }, this.wallet.wallet);
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = stackContractTxId;
           this.setContractId(stackContractTxId);
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.STACK,
+            "id": stackContractTxId,
+          })
           headerPayload[svpTags.COMMAND] = commands.STACK_CREATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.name = bodyPayload.file.name;
@@ -204,6 +228,11 @@ module.exports = (function () {
               [svpTags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
             }, this.wallet.wallet);
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.FOLDER,
+            "id": folderContractTxId,
+          })
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = folderContractTxId;
           this.setContractId(folderContractTxId);
           headerPayload[svpTags.COMMAND] = commands.FOLDER_CREATE;
@@ -218,6 +247,11 @@ module.exports = (function () {
             }, this.wallet.wallet);
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = memoContractTxId;
           this.setContractId(memoContractTxId);
+          response.transactions.push({
+            "type": "contract-creation",
+            "objectType": objectTypes.MEMO,
+            "id": memoContractTxId,
+          })
           headerPayload[svpTags.COMMAND] = commands.MEMO_CREATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
           break
@@ -293,13 +327,23 @@ module.exports = (function () {
       const encryptedBody = await this.constructBody(bodyPayload);
 
       const txInput = await this.signTransaction(fullHeader, encryptedBody);
-      const txId = await postContractTransaction(
+      const { txId, pstTransfer } = await postContractTransaction(
         headerPayload[svpTags.OBJECT_CONTRACT_ID],
         { function: "write", ...txInput },
         fullHeader,
         this.wallet.wallet
       );
+      response.objectId = headerPayload[svpTags.OBJECT_CONTRACT_ID];
+      response.vaultId = this.vaultContract.txId();
+      response.membershipId = this.membershipContract.txId();
+      response.type = headerPayload[svpTags.OBJECT_CONTRACT_TYPE];
+      response.transactions.push({
+        "type": "contract-interaction",
+        "id": txId,
+        "pstTransfer": JSON.stringify(pstTransfer)
+      })
       this.setTransactionId(txId);
+      return response;
     }
 
     async constructBody(payload) {

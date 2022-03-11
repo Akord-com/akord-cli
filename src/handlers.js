@@ -14,6 +14,53 @@ const SVPWrapper = require("./wrapper");
 const WalletFactory = require('./crypto/wallet/wallet-factory');
 const { fromMembershipContract } = require('./crypto/encryption-keys');
 const os = require('os');
+const mnemonicKeys = require('arweave-mnemonic-keys');
+
+async function walletConfigureHandler(argv) {
+  const keyFile = argv.keyFile;
+  try {
+    const stringKey = fs.readFileSync(keyFile).toString();
+    fs.writeFileSync(os.homedir() + "/.akord", stringKey);
+    console.log("Your wallet was stored successfully at: ~/.akord");
+  } catch (error) {
+    console.log("Oops, something went wrong when configuring your wallet: " + error);
+    process.exit(0);
+  }
+}
+
+async function walletGenerateHandler() {
+  const mnemonic = await mnemonicKeys.generateMnemonic();
+  console.log("Please be patient, generating the wallet may take a while");
+  const jwk = await mnemonicKeys.getKeyFromMnemonic(mnemonic.toString());
+  try {
+    fs.writeFileSync(os.homedir() + "/.akord", JSON.stringify(jwk));
+  } catch (error) {
+    console.log("Oops, something went wrong when configuring your wallet: " + error);
+    process.exit(0);
+  }
+  const address = await arweave.wallets.jwkToAddress(jwk);
+  console.log("Your wallet was generated & stored successfully at: ~/.akord");
+  console.log("Your wallet address: " + address);
+  console.log("The seed phrase to recover the wallet: " + mnemonic);
+  console.log("Please keep it somewhere safe.");
+  process.exit(0);
+};
+
+async function walletImportHandler(argv) {
+  const mnemonic = argv.mnemonic;
+  console.log("Please be patient, importing the wallet may take a while");
+  const jwk = await mnemonicKeys.getKeyFromMnemonic(mnemonic.toString());
+  try {
+    fs.writeFileSync(os.homedir() + "/.akord", JSON.stringify(jwk));
+  } catch (error) {
+    console.log("Oops, something went wrong when configuring your wallet: " + error);
+    process.exit(0);
+  }
+  const address = await arweave.wallets.jwkToAddress(jwk);
+  console.log("Your wallet was imported & stored successfully at: ~/.akord");
+  console.log("Your wallet address: " + address);
+  process.exit(0);
+};
 
 async function vaultCreateHandler(argv) {
   let user = await loadKeyFile();
@@ -22,10 +69,8 @@ async function vaultCreateHandler(argv) {
 
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const svpWrapper = new SVPWrapper(wallet);
-  await svpWrapper.dispatch("VAULT_CREATE", {}, { name: name, termsOfAccess: termsOfAccess });
-  console.log(`Vault created, vault id: ` + svpWrapper.contractId);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("VAULT_CREATE", {}, { name: name, termsOfAccess: termsOfAccess });
+  console.log(response);
   process.exit(0);
 }
 
@@ -54,18 +99,7 @@ async function loadKeyFile() {
     return user;
   } catch (error) {
     console.log("Oops, something went wrong when loading your wallet: " + error);
-    console.log("Make sure that your keyfile is configured: akord configure --help");
-    process.exit(0);
-  }
-}
-
-async function configureHandler(argv) {
-  const keyFile = argv.keyFile;
-  try {
-    const stringKey = fs.readFileSync(keyFile).toString();
-    fs.writeFileSync(os.homedir() + "/.akord", stringKey);
-  } catch (error) {
-    console.log("Oops, something went wrong when configuring your wallet: " + error);
+    console.log("Make sure that your keyfile is configured: akord wallet:configure --help");
     process.exit(0);
   }
 }
@@ -82,10 +116,8 @@ async function vaultRenameHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name: name })
-  console.log(`Vault successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name: name })
+  console.log(response);
   process.exit(0);
 }
 
@@ -100,10 +132,8 @@ async function vaultArchiveHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("VAULT_ARCHIVE", { "Object-Contract-Id": vaultId }, {})
-  console.log(`Vault successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("VAULT_ARCHIVE", { "Object-Contract-Id": vaultId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -118,10 +148,8 @@ async function vaultRestoreHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("VAULT_RESTORE", { "Object-Contract-Id": vaultId }, {})
-  console.log(`Vault successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("VAULT_RESTORE", { "Object-Contract-Id": vaultId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -156,10 +184,8 @@ async function stackCreateHandler(argv) {
   const state = await getContract(user.membershipContractTxId, user.wallet).readState();
   const encryptionKeys = fromMembershipContract(state.state);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_CREATE", {}, { name: name ? name : file.name, file: file });
-  console.log(`Stack created, stack id: ` + svpWrapper.contractId);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_CREATE", {}, { name: name ? name : file.name, file: file });
+  console.log(response);
   process.exit(0);
 }
 
@@ -192,10 +218,8 @@ async function stackUploadRevisionHandler(argv) {
   const state = await getContract(user.membershipContractTxId, user.wallet).readState();
   const encryptionKeys = fromMembershipContract(state.state);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_UPLOAD_REVISION", {}, { file: file });
-  console.log(`Stack successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_UPLOAD_REVISION", {}, { file: file });
+  console.log(response);
   process.exit(0);
 }
 
@@ -214,10 +238,8 @@ async function stackRenameHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_RENAME", { "Object-Contract-Id": stackId }, { name: name })
-  console.log(`Stack successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_RENAME", { "Object-Contract-Id": stackId }, { name: name })
+  console.log(response);
   process.exit(0);
 }
 
@@ -235,10 +257,8 @@ async function stackRevokeHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_REVOKE", { "Object-Contract-Id": stackId }, {})
-  console.log(`Stack successfully revoked`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_REVOKE", { "Object-Contract-Id": stackId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -256,10 +276,8 @@ async function stackRestoreHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_RESTORE", { "Object-Contract-Id": stackId }, {})
-  console.log(`Stack successfully restored`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_RESTORE", { "Object-Contract-Id": stackId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -277,10 +295,8 @@ async function stackDeleteHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_DELETE", { "Object-Contract-Id": stackId }, {})
-  console.log(`Stack successfully deleted`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_DELETE", { "Object-Contract-Id": stackId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -299,10 +315,8 @@ async function stackMoveHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("STACK_MOVE", { "Object-Contract-Id": stackId }, { folderId: parentFolderId })
-  console.log(`Stack successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("STACK_MOVE", { "Object-Contract-Id": stackId }, { folderId: parentFolderId })
+  console.log(response);
   process.exit(0);
 }
 
@@ -319,10 +333,8 @@ async function memoCreateHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("MEMO_CREATE", {}, { message: message });
-  console.log(`Memo created, memo id: ` + svpWrapper.contractId);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("MEMO_CREATE", {}, { message: message });
+  console.log(response);
   process.exit(0);
 }
 
@@ -341,10 +353,8 @@ async function folderCreateHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_CREATE", {}, { name: name, folderId: parentFolderId })
-  console.log(`Folder created, folder id: ` + svpWrapper.contractId);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_CREATE", {}, { name: name, folderId: parentFolderId })
+  console.log(response);
   process.exit(0);
 }
 
@@ -363,10 +373,8 @@ async function folderRenameHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name: name })
-  console.log(`Folder successfully updated`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name: name })
+  console.log(response);
   process.exit(0);
 }
 
@@ -385,10 +393,8 @@ async function folderMoveHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_MOVE", { "Object-Contract-Id": folderId }, { folderId: parentFolderId })
-  console.log(`Folder successfully updated.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_MOVE", { "Object-Contract-Id": folderId }, { folderId: parentFolderId })
+  console.log(response);
   process.exit(0);
 }
 
@@ -406,10 +412,8 @@ async function folderRevokeHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_REVOKE", { "Object-Contract-Id": folderId }, {})
-  console.log(`Folder successfully revoked.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_REVOKE", { "Object-Contract-Id": folderId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -427,10 +431,8 @@ async function folderRestoreHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_RESTORE", { "Object-Contract-Id": folderId }, {});
-  console.log(`Folder successfully restored.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_RESTORE", { "Object-Contract-Id": folderId }, {});
+  console.log(response);
   process.exit(0);
 }
 
@@ -447,10 +449,8 @@ async function folderDeleteHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("FOLDER_DELETE", { "Object-Contract-Id": folderId }, {})
-  console.log(`Folder successfully deleted.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("FOLDER_DELETE", { "Object-Contract-Id": folderId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -482,10 +482,8 @@ async function membershipInviteHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(membershipState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("MEMBERSHIP_INVITE", {}, { address: address, role: role })
-  console.log(`Membership created, member id: ` + svpWrapper.contractId);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("MEMBERSHIP_INVITE", {}, { address: address, role: role })
+  console.log(response);
   process.exit(0);
 }
 
@@ -501,10 +499,8 @@ async function membershipAcceptHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(initialState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("MEMBERSHIP_ACCEPT", { "Object-Contract-Id": membershipId }, {})
-  console.log(`Membership successfully updated.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("MEMBERSHIP_ACCEPT", { "Object-Contract-Id": membershipId }, {})
+  console.log(response);
   process.exit(0);
 }
 
@@ -520,10 +516,8 @@ async function membershipRejectHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(initialState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("MEMBERSHIP_REJECT", { "Object-Contract-Id": membershipId }, {});
-  console.log(`Membership successfully updated.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("MEMBERSHIP_REJECT", { "Object-Contract-Id": membershipId }, {});
+  console.log(response);
   process.exit(0);
 }
 
@@ -539,10 +533,8 @@ async function membershipRevokeHandler(argv) {
   const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
   const encryptionKeys = fromMembershipContract(initialState);
   const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  await svpWrapper.dispatch("MEMBERSHIP_REVOKE", { "Object-Contract-Id": membershipId }, {});
-  console.log(`Membership successfully revoked.`);
-  console.log(`Transaction was posted, it might take few minutes for the transaction to be confirmed by the network: `
-    + svpWrapper.transactionId);
+  const response = await svpWrapper.dispatch("MEMBERSHIP_REVOKE", { "Object-Contract-Id": membershipId }, {});
+  console.log(response);
   process.exit(0);
 }
 
@@ -557,7 +549,6 @@ async function getMembership(vaultId, user) {
 }
 
 module.exports = {
-  configureHandler,
   vaultCreateHandler,
   vaultRenameHandler,
   vaultArchiveHandler,
@@ -580,5 +571,8 @@ module.exports = {
   membershipRevokeHandler,
   membershipAcceptHandler,
   membershipRejectHandler,
-  objectReadHandler
+  objectReadHandler,
+  walletConfigureHandler,
+  walletGenerateHandler,
+  walletImportHandler
 }
