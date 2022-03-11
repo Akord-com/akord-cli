@@ -61,10 +61,26 @@ const askForUploadType = async () => {
     ]);
 };
 
+const askForRole = async () => {
+  return inquirer
+    .prompt([
+      {
+        type: 'list',
+        name: 'role',
+        message: 'Choose a role for the new member',
+        choices: [
+          'CONTRIBUTOR', 'VIEWER',
+        ],
+        default: 'CONTRIBUTOR'
+      },
+    ]);
+};
+
 module.exports = {
   askForFilePath,
   askForTransactionId,
   askForAccessType,
   askForStackName,
-  askForUploadType
+  askForUploadType,
+  askForRole
 }

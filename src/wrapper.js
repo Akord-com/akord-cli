@@ -85,7 +85,7 @@ module.exports = (function () {
             constructHeader(),
             this.wallet.wallet
           );
-          headerPayload[svpTags.SCHEMA_URI] = commands.VAULT_CREATE;
+          headerPayload[svpTags.COMMAND] = commands.VAULT_CREATE;
           bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           bodyPayload.keyRotate = {
             publicKey: publicKey,
@@ -93,7 +93,7 @@ module.exports = (function () {
           }
           const contract = getContract(contractTxId, this.wallet.wallet);
           this.setVaultContract(contract);
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = contract.txId();
+          headerPayload[svpTags.OBJECT_CONTRACT_ID] = contractTxId;
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContract(
@@ -109,14 +109,14 @@ module.exports = (function () {
 
           const memberContract = getContract(membershipContractTxId, this.wallet.wallet);
           this.setMembershipContract(memberContract);
-          this.setContractId(contract.txId());
+          this.setContractId(contractTxId);
           headerPayload[svpTags.MEMBER_ADDRESS] = address;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
           break;
         }
         case 'VAULT_RENAME':
           this.setContractId(this.vaultContract.txId());
-          headerPayload[svpTags.SCHEMA_URI] = commands.VAULT_UPDATE
+          headerPayload[svpTags.COMMAND] = commands.VAULT_UPDATE
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.vaultContract.txId();
           break
@@ -124,7 +124,7 @@ module.exports = (function () {
           bodyPayload.memberKeys = [];
           const publicKey = await getPublicKeyFromAddress(bodyPayload.address);
           await this.setKeysEncryptionPublicKey(publicKey)
-          headerPayload[svpTags.SCHEMA_URI] = commands.MEMBERSHIP_INVITE
+          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_INVITE
           const membershipContractTxId = await initContract(
             codeSources[objectTypes.MEMBERSHIP + contractSrcPostfix],
             {
@@ -132,24 +132,25 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
               [svpTags.MEMBER_ADDRESS]: bodyPayload.address
             }, this.wallet.wallet);
+          this.setContractId(membershipContractTxId);
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = membershipContractTxId;
           headerPayload[svpTags.MEMBER_ADDRESS] = bodyPayload.address;
           break;
         }
         case 'MEMBERSHIP_ACCEPT':
-          headerPayload[svpTags.SCHEMA_URI] = commands.MEMBERSHIP_ACCEPT;
+          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           break
         case 'MEMBERSHIP_REJECT':
-          headerPayload[svpTags.SCHEMA_URI] = commands.MEMBERSHIP_REJECT;
+          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_REJECT;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           break
         case 'MEMBERSHIP_REVOKE': {
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair();
-          headerPayload[svpTags.SCHEMA_URI] = commands.MEMBERSHIP_REVOKE;
+          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_REVOKE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           const vaultState = await this.getLatestVaultState();
@@ -187,13 +188,13 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
             }, this.wallet.wallet);
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = stackContractTxId;
-
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_CREATE;
+          this.setContractId(stackContractTxId);
+          headerPayload[svpTags.COMMAND] = commands.STACK_CREATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.name = bodyPayload.file.name;
           break
         case 'STACK_RENAME':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_UPDATE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_UPDATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_CREATE':
@@ -204,11 +205,11 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
             }, this.wallet.wallet);
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = folderContractTxId;
-
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_CREATE;
+          this.setContractId(folderContractTxId);
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_CREATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
-        case 'MEMO_WRITE':
+        case 'MEMO_CREATE':
           const memoContractTxId = await initContract(
             codeSources[objectTypes.MEMO + contractSrcPostfix],
             {
@@ -216,54 +217,66 @@ module.exports = (function () {
               [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
             }, this.wallet.wallet);
           headerPayload[svpTags.OBJECT_CONTRACT_ID] = memoContractTxId;
-
-          headerPayload[svpTags.SCHEMA_URI] = commands.MEMO_CREATE;
+          this.setContractId(memoContractTxId);
+          headerPayload[svpTags.COMMAND] = commands.MEMO_CREATE;
           headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
           break
         case 'VAULT_ARCHIVE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.VAULT_ARCHIVE;
+          headerPayload[svpTags.COMMAND] = commands.VAULT_ARCHIVE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break
         case 'VAULT_RESTORE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.VAULT_RESTORE;
+          headerPayload[svpTags.COMMAND] = commands.VAULT_RESTORE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break
         case 'STACK_REVOKE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_REVOKE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_REVOKE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.REVOKED
           break
         case 'STACK_REVOKE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_RESTORE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_RESTORE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.ACTIVE
           break
         case 'STACK_DELETE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_DELETE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_DELETE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.DELETED
           break
         case 'FOLDER_REVOKE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_REVOKE;
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_REVOKE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.REVOKED
           break
         case 'FOLDER_RESTORE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_RESTORE;
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_RESTORE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.ACTIVE
           break
         case 'FOLDER_DELETE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_DELETE;
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_DELETE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.DELETED
           break
         case 'STACK_RENAME':
         case 'STACK_UPLOAD_REVISION':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_UPDATE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_UPDATE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'STACK_MOVE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.STACK_MOVE;
+          headerPayload[svpTags.COMMAND] = commands.STACK_MOVE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_RENAME':
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_UPDATE;
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_UPDATE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         case 'FOLDER_MOVE':
-          headerPayload[svpTags.SCHEMA_URI] = commands.FOLDER_MOVE;
+          headerPayload[svpTags.COMMAND] = commands.FOLDER_MOVE;
+          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         default:
           throw new Error('Unknown action ref: ' + actionRef)

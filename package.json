@@ -25,7 +25,7 @@
     "figlet": "^1.5.2",
     "inquirer": "^8.2.0",
     "libsodium-wrappers": "^0.7.9",
-    "redstone-smartweave": "^0.4.29",
+    "redstone-smartweave": "^0.4.40",
     "yargs": "^17.3.1"
   },
   "devDependencies": {

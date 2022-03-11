@@ -38,7 +38,7 @@ module.exports = (function () {
       const newState = cloneDeep(state)
       const decryptedState = await this.decryptObject(
         newState,
-        ['name']
+        ['fullName', 'avatarUrl', 'phone', 'name', 'title', 'description']
       )
       return decryptedState;
     }

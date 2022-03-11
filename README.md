@@ -1,5 +1,5 @@
 # akord-cli
-Akord Command Line Interface - simply interact with the Akord Protocol from the terminal
+Akord Command Line Interface - simply interact with the [Akord Protocol](https://github.com/Akord-com/akord-protocol) from the terminal
 
 ## CLI Usage
 ```
@@ -57,6 +57,8 @@ Commands:
   akord membership:reject <membershipId>    reject the invitation to the vault
                                             or leave the vault
   akord membership:revoke <membershipId>    revoke the membership
+  akord object:read <objectId>              compute & decrypt the current object
+                                            state
 
 Options:
   --version  Show version number                                       [boolean]

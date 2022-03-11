@@ -28,6 +28,7 @@ const {
   membershipAcceptHandler,
   membershipRejectHandler,
   configureHandler,
+  objectReadHandler
 } = require('./handlers');
 
 clear();
@@ -278,6 +279,16 @@ const membershipRevokeCommand = {
   handler: membershipRevokeHandler,
 };
 
+const objectReadCommand = {
+  command: 'object:read <objectId>',
+  describe: 'compute & decrypt the current object state',
+  builder: () => {
+    yargs
+    .positional('objectId', { describe: 'object id' })
+  },
+  handler: objectReadHandler,
+};
+
 yargs
   .command(configureCommand)
   .command(vaultCreateCommand)
@@ -302,6 +313,7 @@ yargs
   .command(membershipAcceptCommand)
   .command(membershipRejectCommand)
   .command(membershipRevokeCommand)
+  .command(objectReadCommand)
   .demandCommand()
   .help()
   .argv;

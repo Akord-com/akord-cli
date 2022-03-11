@@ -1,11 +1,11 @@
-exports.protocolName = "SVP";
+exports.protocolName = "SVP-Test";
 exports.protocolVersion = "0.1";
-exports.appName = "Akord";
+exports.appName = "App-Test";
 exports.codeSources = {
-  "Vault-Contract-Src":"NNptU0tEahLyl5oLBLanTb4OnjEFXYbZmq5htPz5sLg",
-  "Membership-Contract-Src":"zUP23d312mA-imKgLLVY3mMC7xftGuCpNGc13j-wN6M",
-  "Stack-Contract-Src":"vm6HTzH3DpXpIBK6R6ktNS7VHhvUJE0ls9Ii-K0BzE4",
-  "Memo-Contract-Src":"Uq-rhwDLodGGGO4urRnVOmJ8JLEyu3k53Ykq8z7WSHU",
-  "Folder-Contract-Src":"mHqAFccMdINijQ_9g_UpKJYqH9IApb0_SJf2ERQnibE",
-};
-exports.pstContractTxId = "SYVDxV2lJsZ7p_4_MzfSigGYLfY-q7xx53W8X_0BQ-k";
+  "Vault-Contract-Src": "2DExgTMZpa6ZVx2-SETKfPYUZ-UcY0YgZvWf_SLhyBc",
+  "Membership-Contract-Src": "G3uTA1WrRmfKI225wNRfAEhyhYFoOn-XVqWIzs-YMIA",
+  "Stack-Contract-Src": "H5WQ3InC6O96O0y9m1k3HvcEBLs53DnwxZvb23fJqrk",
+  "Memo-Contract-Src": "gai1FQvsB9YQ-hEOgw0AnOfH00GhM_wbSaPn0XZRqFI",
+  "Folder-Contract-Src": "v4CZoYNdpry41z6r0NQRwtEoF8Ul1p8UlHNRHe59SF4"
+}
+exports.pstContractTxId = "w_PFMgshjCl2ruSSqZfDyxCbJXlMpxZJJhaceptLeVw";
