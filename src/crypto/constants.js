@@ -15,17 +15,17 @@ const SALT_LENGTH = 16
 const HD_SIGNING_PATH = 'm/0\'/0\'/0'
 const HD_ENCRYPTION_PATH = 'm/1\'/0\'/0'
 
-const SVP_VAULT_CREATE = 'svp:vault:create'
-const SVP_VAULT_UPDATE = 'svp:vault:update'
-const SVP_MEMBERSHIP_UPDATE = 'svp:membership:update'
-const SVP_MEMBERSHIP_OWNER = 'svp:membership:owner'
-const SVP_MEMBERSHIP_INVITE = 'svp:membership:invite'
-const SVP_MEMBERSHIP_ACCEPT = 'svp:membership:accept'
-const SVP_MEMBERSHIP_REJECT = 'svp:membership:reject'
-const SVP_MEMBERSHIP_REVOKE = 'svp:membership:revoke'
-const SVP_STACK_CREATE = 'svp:stack:create'
-const SVP_STACK_UPDATE = 'svp:stack:update'
-const SVP_MEMO_CREATE = 'svp:memo:create'
+const VAULT_CREATE = 'vault:create'
+const VAULT_UPDATE = 'vault:update'
+const MEMBERSHIP_UPDATE = 'membership:update'
+const MEMBERSHIP_OWNER = 'membership:owner'
+const MEMBERSHIP_INVITE = 'membership:invite'
+const MEMBERSHIP_ACCEPT = 'membership:accept'
+const MEMBERSHIP_REJECT = 'membership:reject'
+const MEMBERSHIP_REVOKE = 'membership:revoke'
+const STACK_CREATE = 'stack:create'
+const STACK_UPDATE = 'stack:update'
+const MEMO_CREATE = 'memo:create'
 
 module.exports = {
   HASH_ALGORITHM,
@@ -39,15 +39,15 @@ module.exports = {
   SALT_LENGTH,
   HD_SIGNING_PATH,
   HD_ENCRYPTION_PATH,
-  SVP_VAULT_CREATE,
-  SVP_VAULT_UPDATE,
-  SVP_MEMBERSHIP_UPDATE,
-  SVP_MEMBERSHIP_OWNER,
-  SVP_MEMBERSHIP_INVITE,
-  SVP_MEMBERSHIP_ACCEPT,
-  SVP_MEMBERSHIP_REJECT,
-  SVP_MEMBERSHIP_REVOKE,
-  SVP_STACK_CREATE,
-  SVP_STACK_UPDATE,
-  SVP_MEMO_CREATE
+  VAULT_CREATE,
+  VAULT_UPDATE,
+  MEMBERSHIP_UPDATE,
+  MEMBERSHIP_OWNER,
+  MEMBERSHIP_INVITE,
+  MEMBERSHIP_ACCEPT,
+  MEMBERSHIP_REJECT,
+  MEMBERSHIP_REVOKE,
+  STACK_CREATE,
+  STACK_UPDATE,
+  MEMO_CREATE
 }

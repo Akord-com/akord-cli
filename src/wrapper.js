@@ -10,12 +10,12 @@ const {
 } = require("./helpers");
 const { arrayToBase64, jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
-const { svpTags, objectTypes, role, commands, status } = require('./constants');
+const { tags, objectTypes, role, commands, status } = require('./constants');
 
 const contractSrcPostfix = "-Contract-Src";
 
 module.exports = (function () {
-  class SVPWrapper {
+  class Wrapper {
     constructor(wallet, encryptionKeys, vaultContract, membershipContract) {
       this.wallet = wallet
       this.vaultContract = vaultContract
@@ -94,7 +94,7 @@ module.exports = (function () {
             "objectType": objectTypes.VAULT,
             "id": contractTxId,
           })
-          headerPayload[svpTags.COMMAND] = commands.VAULT_CREATE;
+          headerPayload[tags.COMMAND] = commands.VAULT_CREATE;
           bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           bodyPayload.keyRotate = {
             publicKey: publicKey,
@@ -102,15 +102,15 @@ module.exports = (function () {
           }
           const contract = getContract(contractTxId, this.wallet.wallet);
           this.setVaultContract(contract);
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = contractTxId;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContract(
             codeSources[objectTypes.MEMBERSHIP + contractSrcPostfix],
             {
-              [svpTags.VAULT_CONTRACT_ID]: contractTxId,
-              [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
-              [svpTags.MEMBER_ADDRESS]: address
+              [tags.VAULT_CONTRACT_ID]: contractTxId,
+              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
+              [tags.MEMBER_ADDRESS]: address
             }, this.wallet.wallet);
           response.transactions.push({
             "type": "contract-creation",
@@ -124,27 +124,27 @@ module.exports = (function () {
           const memberContract = getContract(membershipContractTxId, this.wallet.wallet);
           this.setMembershipContract(memberContract);
           this.setContractId(contractTxId);
-          headerPayload[svpTags.MEMBER_ADDRESS] = address;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
+          headerPayload[tags.MEMBER_ADDRESS] = address;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
           break;
         }
         case 'VAULT_RENAME':
           this.setContractId(this.vaultContract.txId());
-          headerPayload[svpTags.COMMAND] = commands.VAULT_UPDATE
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.vaultContract.txId();
+          headerPayload[tags.COMMAND] = commands.VAULT_UPDATE
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = this.vaultContract.txId();
           break
         case 'MEMBERSHIP_INVITE': {
           bodyPayload.memberKeys = [];
           const publicKey = await getPublicKeyFromAddress(bodyPayload.address);
           await this.setKeysEncryptionPublicKey(publicKey)
-          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_INVITE
+          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_INVITE
           const membershipContractTxId = await initContract(
             codeSources[objectTypes.MEMBERSHIP + contractSrcPostfix],
             {
-              [svpTags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
-              [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
-              [svpTags.MEMBER_ADDRESS]: bodyPayload.address
+              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
+              [tags.MEMBER_ADDRESS]: bodyPayload.address
             }, this.wallet.wallet);
           response.transactions.push({
             "type": "contract-creation",
@@ -152,26 +152,26 @@ module.exports = (function () {
             "id": membershipContractTxId,
           })
           this.setContractId(membershipContractTxId);
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = membershipContractTxId;
-          headerPayload[svpTags.MEMBER_ADDRESS] = bodyPayload.address;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = membershipContractTxId;
+          headerPayload[tags.MEMBER_ADDRESS] = bodyPayload.address;
           break;
         }
         case 'MEMBERSHIP_ACCEPT':
-          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
+          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           break
         case 'MEMBERSHIP_REJECT':
-          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_REJECT;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
+          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REJECT;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           break
         case 'MEMBERSHIP_REVOKE': {
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair();
-          headerPayload[svpTags.COMMAND] = commands.MEMBERSHIP_REVOKE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
+          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REVOKE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           const vaultState = await this.getLatestVaultState();
           for (let member of vaultState.memberships) {
             const memberContract = getContract(member, this.wallet.wallet);
@@ -203,114 +203,114 @@ module.exports = (function () {
           const stackContractTxId = await initContract(
             codeSources[objectTypes.STACK + contractSrcPostfix],
             {
-              [svpTags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
-              [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
+              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
             }, this.wallet.wallet);
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = stackContractTxId;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = stackContractTxId;
           this.setContractId(stackContractTxId);
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.STACK,
             "id": stackContractTxId,
           })
-          headerPayload[svpTags.COMMAND] = commands.STACK_CREATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_CREATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.name = bodyPayload.file.name;
           break
         case 'STACK_RENAME':
-          headerPayload[svpTags.COMMAND] = commands.STACK_UPDATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_CREATE':
           const folderContractTxId = await initContract(
             codeSources[objectTypes.FOLDER + contractSrcPostfix],
             {
-              [svpTags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
-              [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
+              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
             }, this.wallet.wallet);
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.FOLDER,
             "id": folderContractTxId,
           })
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = folderContractTxId;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = folderContractTxId;
           this.setContractId(folderContractTxId);
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_CREATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_CREATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         case 'MEMO_CREATE':
           const memoContractTxId = await initContract(
             codeSources[objectTypes.MEMO + contractSrcPostfix],
             {
-              [svpTags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
-              [svpTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
+              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
             }, this.wallet.wallet);
-          headerPayload[svpTags.OBJECT_CONTRACT_ID] = memoContractTxId;
+          headerPayload[tags.OBJECT_CONTRACT_ID] = memoContractTxId;
           this.setContractId(memoContractTxId);
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.MEMO,
             "id": memoContractTxId,
           })
-          headerPayload[svpTags.COMMAND] = commands.MEMO_CREATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
+          headerPayload[tags.COMMAND] = commands.MEMO_CREATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
           break
         case 'VAULT_ARCHIVE':
-          headerPayload[svpTags.COMMAND] = commands.VAULT_ARCHIVE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[tags.COMMAND] = commands.VAULT_ARCHIVE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break
         case 'VAULT_RESTORE':
-          headerPayload[svpTags.COMMAND] = commands.VAULT_RESTORE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[tags.COMMAND] = commands.VAULT_RESTORE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break
         case 'STACK_REVOKE':
-          headerPayload[svpTags.COMMAND] = commands.STACK_REVOKE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_REVOKE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.REVOKED
           break
         case 'STACK_REVOKE':
-          headerPayload[svpTags.COMMAND] = commands.STACK_RESTORE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_RESTORE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.ACTIVE
           break
         case 'STACK_DELETE':
-          headerPayload[svpTags.COMMAND] = commands.STACK_DELETE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_DELETE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.DELETED
           break
         case 'FOLDER_REVOKE':
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_REVOKE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_REVOKE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.REVOKED
           break
         case 'FOLDER_RESTORE':
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_RESTORE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_RESTORE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.ACTIVE
           break
         case 'FOLDER_DELETE':
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_DELETE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_DELETE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.DELETED
           break
         case 'STACK_RENAME':
         case 'STACK_UPLOAD_REVISION':
-          headerPayload[svpTags.COMMAND] = commands.STACK_UPDATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'STACK_MOVE':
-          headerPayload[svpTags.COMMAND] = commands.STACK_MOVE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[tags.COMMAND] = commands.STACK_MOVE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_RENAME':
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_UPDATE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_UPDATE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         case 'FOLDER_MOVE':
-          headerPayload[svpTags.COMMAND] = commands.FOLDER_MOVE;
-          headerPayload[svpTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[tags.COMMAND] = commands.FOLDER_MOVE;
+          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         default:
           throw new Error('Unknown action ref: ' + actionRef)
@@ -318,9 +318,9 @@ module.exports = (function () {
 
       // build the transaction header
       const address = await this.wallet.getAddress();
-      headerPayload[svpTags.SIGNER_ADDRESS] = address;
-      headerPayload[svpTags.VAULT_CONTRACT_ID] = this.vaultContract.txId();
-      headerPayload[svpTags.MEMBERSHIP_CONTRACT_ID] = this.membershipContract.txId();
+      headerPayload[tags.SIGNER_ADDRESS] = address;
+      headerPayload[tags.VAULT_CONTRACT_ID] = this.vaultContract.txId();
+      headerPayload[tags.MEMBERSHIP_CONTRACT_ID] = this.membershipContract.txId();
       const fullHeader = constructHeader(headerPayload);
 
       // build & encrypt the transaction body
@@ -328,15 +328,15 @@ module.exports = (function () {
 
       const txInput = await this.signTransaction(fullHeader, encryptedBody);
       const { txId, pstTransfer } = await postContractTransaction(
-        headerPayload[svpTags.OBJECT_CONTRACT_ID],
+        headerPayload[tags.OBJECT_CONTRACT_ID],
         { function: "write", ...txInput },
         fullHeader,
         this.wallet.wallet
       );
-      response.objectId = headerPayload[svpTags.OBJECT_CONTRACT_ID];
+      response.objectId = headerPayload[tags.OBJECT_CONTRACT_ID];
       response.vaultId = this.vaultContract.txId();
       response.membershipId = this.membershipContract.txId();
-      response.type = headerPayload[svpTags.OBJECT_CONTRACT_TYPE];
+      response.type = headerPayload[tags.OBJECT_CONTRACT_TYPE];
       response.transactions.push({
         "type": "contract-interaction",
         "id": txId,
@@ -419,5 +419,5 @@ module.exports = (function () {
       return latestMembershipState.state;
     }
   }
-  return SVPWrapper;
+  return Wrapper;
 })();

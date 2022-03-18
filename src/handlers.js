@@ -1,6 +1,6 @@
-const { getContract } = require('./helpers');
+const { getContract, getEncryptedBackupPhraseFromCognito } = require('./helpers');
 const fs = require('fs');
-const { arweave, prepareArweaveTransaction, uploadChunksArweaveTransaction } = require("./arweave-helpers");
+const { prepareArweaveTransaction, uploadChunksArweaveTransaction } = require("./arweave-helpers");
 var path = require("path");
 const {
   askForFilePath,
@@ -10,35 +10,58 @@ const {
   askForUploadType,
   askForRole
 } = require("./inquirers");
-const SVPWrapper = require("./wrapper");
+const Wrapper = require("./wrapper");
 const WalletFactory = require('./crypto/wallet/wallet-factory');
+const MnemonicWallet = require('./crypto/wallet/mnemonic-wallet');
 const { fromMembershipContract } = require('./crypto/encryption-keys');
 const os = require('os');
-const mnemonicKeys = require('arweave-mnemonic-keys');
+
+function storeWallet(walletData) {
+  try {
+    fs.writeFileSync(os.homedir() + "/.akord", walletData);
+    console.log("Your wallet was stored successfully at: ~/.akord");
+  } catch (error) {
+    console.log("Oops, something went wrong when storing your wallet: " + error);
+    process.exit(0);
+  }
+}
 
 async function walletConfigureHandler(argv) {
   const keyFile = argv.keyFile;
   try {
     const stringKey = fs.readFileSync(keyFile).toString();
-    fs.writeFileSync(os.homedir() + "/.akord", stringKey);
-    console.log("Your wallet was stored successfully at: ~/.akord");
+    storeWallet(stringKey);
   } catch (error) {
     console.log("Oops, something went wrong when configuring your wallet: " + error);
     process.exit(0);
   }
 }
 
+async function walletImportHandler(argv) {
+  const email = argv.email;
+  const password = argv.password;
+
+  const encryptedBackupPhrase = await getEncryptedBackupPhraseFromCognito(email, password);
+  console.log("Please be patient, importing the wallet may take a while");
+  const wallet = await MnemonicWallet.importFromEncBackupPhrase(password, encryptedBackupPhrase);
+  storeWallet(JSON.stringify({
+    "jwk": wallet.wallet,
+    "mnemonic": wallet.backupPhrase
+  }));
+  const address = await wallet.getAddress();
+  console.log("Your wallet was imported & stored successfully at: ~/.akord");
+  console.log("Your wallet address: " + address);
+  process.exit(0);
+}
+
 async function walletGenerateHandler() {
-  const mnemonic = await mnemonicKeys.generateMnemonic();
   console.log("Please be patient, generating the wallet may take a while");
-  const jwk = await mnemonicKeys.getKeyFromMnemonic(mnemonic.toString());
-  try {
-    fs.writeFileSync(os.homedir() + "/.akord", JSON.stringify(jwk));
-  } catch (error) {
-    console.log("Oops, something went wrong when configuring your wallet: " + error);
-    process.exit(0);
-  }
-  const address = await arweave.wallets.jwkToAddress(jwk);
+  const wallet = await MnemonicWallet.create();
+  storeWallet(JSON.stringify({
+    "jwk": wallet.wallet,
+    "mnemonic": wallet.backupPhrase
+  }));
+  const address = await wallet.getAddress();
   console.log("Your wallet was generated & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
   console.log("The seed phrase to recover the wallet: " + mnemonic);
@@ -46,57 +69,57 @@ async function walletGenerateHandler() {
   process.exit(0);
 };
 
-async function walletImportHandler(argv) {
+async function walletRecoverHandler(argv) {
   const mnemonic = argv.mnemonic;
-  console.log("Please be patient, importing the wallet may take a while");
-  const jwk = await mnemonicKeys.getKeyFromMnemonic(mnemonic.toString());
-  try {
-    fs.writeFileSync(os.homedir() + "/.akord", JSON.stringify(jwk));
-  } catch (error) {
-    console.log("Oops, something went wrong when configuring your wallet: " + error);
-    process.exit(0);
-  }
-  const address = await arweave.wallets.jwkToAddress(jwk);
+  console.log("Please be patient, recovering the wallet may take a while");
+  const wallet = await MnemonicWallet.recover(mnemonic);
+  storeWallet(JSON.stringify({
+    "jwk": wallet.wallet,
+    "mnemonic": wallet.backupPhrase
+  }));
+  const address = await wallet.getAddress();
   console.log("Your wallet was imported & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
   process.exit(0);
 };
 
 async function vaultCreateHandler(argv) {
-  let user = await loadKeyFile();
+  const wallet = await loadWallet();
   const name = argv.name;
   const termsOfAccess = argv.termsOfAccess;
 
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const svpWrapper = new SVPWrapper(wallet);
-  const response = await svpWrapper.dispatch("VAULT_CREATE", {}, { name: name, termsOfAccess: termsOfAccess });
+  const wrapper = new Wrapper(wallet);
+  const response = await wrapper.dispatch("VAULT_CREATE", {}, { name: name, termsOfAccess: termsOfAccess });
   console.log(response);
   process.exit(0);
 }
 
 async function objectReadHandler(argv) {
-  let user = await loadKeyFile();
+  const wallet = await loadWallet();
   const objectId = argv.objectId;
-  const state = await getContract(objectId, user.wallet).readState();
-  const vaultId = state.state.vaultId ? state.state.vaultId : objectId;
-  const membershipState = await getMembership(vaultId, user);
-  const vaultContract = getContract(vaultId, user.wallet);
 
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
+  const { objectState, vaultContract, membershipContract, membershipState } = await validateObjectContext(objectId, wallet);
+
   const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, vaultContract, getContract(user.membershipContractTxId, user.wallet));
-  const decryptedState = await svpWrapper.dataEncrypter.decryptState(state.state);
+  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const decryptedState = await wrapper.dataEncrypter.decryptState(objectState.state);
   console.log(decryptedState);
   process.exit(0);
 }
 
-async function loadKeyFile() {
-  let user = {};
+async function loadWallet() {
+  let wallet = {};
   try {
-    const config = fs.readFileSync(os.homedir() + "/.akord").toString();
-    user.wallet = JSON.parse(config);
-    user.address = await arweave.wallets.jwkToAddress(user.wallet);
-    return user;
+    const config = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
+    const mnemonic = config.mnemonic;
+    const jwk = config.jwk
+    if (mnemonic) {
+      wallet = new MnemonicWallet(mnemonic, jwk);
+      wallet.deriveKeys();
+    } else {
+      wallet = new WalletFactory("ARWEAVE", jwk).walletInstance();
+    }
+    return wallet;
   } catch (error) {
     console.log("Oops, something went wrong when loading your wallet: " + error);
     console.log("Make sure that your keyfile is configured: akord wallet:configure --help");
@@ -105,61 +128,27 @@ async function loadKeyFile() {
 }
 
 async function vaultRenameHandler(argv) {
-  let user = await loadKeyFile();
   const vaultId = argv.vaultId;
   const name = argv.name;
 
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name: name })
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(vaultId, "VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name: name });
 }
 
 async function vaultArchiveHandler(argv) {
-  let user = await loadKeyFile();
   const vaultId = argv.vaultId;
 
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("VAULT_ARCHIVE", { "Object-Contract-Id": vaultId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(vaultId, "VAULT_ARCHIVE", { "Object-Contract-Id": vaultId }, {});
 }
 
 async function vaultRestoreHandler(argv) {
-  let user = await loadKeyFile();
   const vaultId = argv.vaultId;
 
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("VAULT_RESTORE", { "Object-Contract-Id": vaultId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(vaultId, "VAULT_RESTORE", { "Object-Contract-Id": vaultId }, {});
 }
 
 async function stackCreateHandler(argv) {
-  let user = await loadKeyFile();
+  const wallet = await loadWallet();
   const vaultId = argv.vaultId;
-
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
 
   const { accessType } = await askForAccessType();
 
@@ -173,29 +162,19 @@ async function stackCreateHandler(argv) {
   } else {
     const { filePath } = await askForFilePath();
     file = getFileFromPath(filePath);
-    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, user.wallet);
+    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, wallet.wallet);
     await uploadChunksArweaveTransaction(transaction);
     file.resourceTx = transaction.id;
   }
 
   const { name } = await askForStackName();
 
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const state = await getContract(user.membershipContractTxId, user.wallet).readState();
-  const encryptionKeys = fromMembershipContract(state.state);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_CREATE", {}, { name: name ? name : file.name, file: file });
-  console.log(response);
-  process.exit(0);
+  await objectCreate(vaultId, "STACK_CREATE", {}, { name: name ? name : file.name, file: file });
 }
 
 async function stackUploadRevisionHandler(argv) {
-  let user = await loadKeyFile();
-  const vaultId = argv.vaultId;
-
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
+  const wallet = await loadWallet();
+  const stackId = argv.stackId;
 
   const { accessType } = await askForAccessType();
 
@@ -209,249 +188,90 @@ async function stackUploadRevisionHandler(argv) {
   } else {
     const { filePath } = await askForFilePath();
     file = getFileFromPath(filePath);
-    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, user.wallet);
+    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, wallet.wallet);
     await uploadChunksArweaveTransaction(transaction);
     file.resourceTx = transaction.id;
   }
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const state = await getContract(user.membershipContractTxId, user.wallet).readState();
-  const encryptionKeys = fromMembershipContract(state.state);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_UPLOAD_REVISION", {}, { file: file });
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file: file });
 }
 
 async function stackRenameHandler(argv) {
-  let user = await loadKeyFile();
-
   const stackId = argv.stackId;
   const name = argv.name;
 
-  const initialState = await getContract(stackId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_RENAME", { "Object-Contract-Id": stackId }, { name: name })
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_RENAME", { "Object-Contract-Id": stackId }, { name: name });
 }
 
 async function stackRevokeHandler(argv) {
-  let user = await loadKeyFile();
-
   const stackId = argv.stackId;
 
-  const initialState = await getContract(stackId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_REVOKE", { "Object-Contract-Id": stackId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_REVOKE", { "Object-Contract-Id": stackId }, {});
 }
 
 async function stackRestoreHandler(argv) {
-  let user = await loadKeyFile();
-
   const stackId = argv.stackId;
 
-  const initialState = await getContract(stackId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_RESTORE", { "Object-Contract-Id": stackId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_RESTORE", { "Object-Contract-Id": stackId }, {});
 }
 
 async function stackDeleteHandler(argv) {
-  let user = await loadKeyFile();
-
   const stackId = argv.stackId;
 
-  const initialState = await getContract(stackId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_DELETE", { "Object-Contract-Id": stackId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_DELETE", { "Object-Contract-Id": stackId }, {});
 }
 
 async function stackMoveHandler(argv) {
-  let user = await loadKeyFile();
-
   const stackId = argv.stackId;
   const parentFolderId = argv.parentFolderId;
 
-  const initialState = await getContract(stackId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("STACK_MOVE", { "Object-Contract-Id": stackId }, { folderId: parentFolderId })
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(stackId, "STACK_MOVE", { "Object-Contract-Id": stackId }, { folderId: parentFolderId });
 }
 
 async function memoCreateHandler(argv) {
-  let user = await loadKeyFile();
-
   const vaultId = argv.vaultId;
   const message = argv.message;
 
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("MEMO_CREATE", {}, { message: message });
-  console.log(response);
-  process.exit(0);
+  await objectCreate(vaultId, "MEMO_CREATE", {}, { message: message });
 }
 
 async function folderCreateHandler(argv) {
-  let user = await loadKeyFile();
-
   const vaultId = argv.vaultId;
   const name = argv.name;
   const parentFolderId = argv.parentFolderId;
 
-
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_CREATE", {}, { name: name, folderId: parentFolderId })
-  console.log(response);
-  process.exit(0);
+  await objectCreate(vaultId, "FOLDER_CREATE", {}, { name: name, folderId: parentFolderId });
 }
 
 async function folderRenameHandler(argv) {
-  let user = await loadKeyFile();
-
   const folderId = argv.folderId;
   const name = argv.name;
 
-  const initialState = await getContract(folderId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name: name })
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(folderId, "FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name: name });
 }
 
 async function folderMoveHandler(argv) {
-  let user = await loadKeyFile();
-
   const folderId = argv.folderId;
   const parentFolderId = argv.parentFolderId;
 
-  const initialState = await getContract(folderId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_MOVE", { "Object-Contract-Id": folderId }, { folderId: parentFolderId })
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(folderId, "FOLDER_MOVE", { "Object-Contract-Id": folderId }, { folderId: parentFolderId });
 }
 
 async function folderRevokeHandler(argv) {
-  let user = await loadKeyFile();
-
   const folderId = argv.folderId;
 
-  const initialState = await getContract(folderId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_REVOKE", { "Object-Contract-Id": folderId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(folderId, "FOLDER_REVOKE", { "Object-Contract-Id": folderId }, {});
 }
 
 async function folderRestoreHandler(argv) {
-  let user = await loadKeyFile();
-
   const folderId = argv.folderId;
 
-  const initialState = await getContract(folderId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_RESTORE", { "Object-Contract-Id": folderId }, {});
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(folderId, "FOLDER_RESTORE", { "Object-Contract-Id": folderId }, {});
 }
 
 async function folderDeleteHandler(argv) {
-  let user = await loadKeyFile();
   const folderId = argv.folderId;
 
-  const initialState = await getContract(folderId, user.wallet).readState();
-
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  const membershipState = await getMembership(initialState.state.vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("FOLDER_DELETE", { "Object-Contract-Id": folderId }, {})
-  console.log(response);
-  process.exit(0);
+  await objectUpdate(folderId, "FOLDER_DELETE", { "Object-Contract-Id": folderId }, {});
 }
 
 function getFileFromPath(filePath) {
@@ -468,84 +288,84 @@ function getFileFromPath(filePath) {
 }
 
 async function membershipInviteHandler(argv) {
-  let user = await loadKeyFile();
-
   const vaultId = argv.vaultId;
   const address = argv.address;
 
   const { role } = await askForRole();
 
-  user.contract = getContract(vaultId, user.wallet);
-  const membershipState = await getMembership(vaultId, user);
-  user.membershipContractTxId = membershipState.id;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(membershipState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("MEMBERSHIP_INVITE", {}, { address: address, role: role })
-  console.log(response);
-  process.exit(0);
+  await objectCreate(vaultId, "MEMBERSHIP_INVITE", {}, { address: address, role: role });
 }
 
 async function membershipAcceptHandler(argv) {
-  let user = await loadKeyFile();
-
   const membershipId = argv.membershipId;
 
-  const initialState = await getContract(membershipId, user.wallet).readState();
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  user.membershipContractTxId = membershipId;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(initialState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("MEMBERSHIP_ACCEPT", { "Object-Contract-Id": membershipId }, {})
-  console.log(response);
-  process.exit(0);
+  await membershipUpdate(membershipId, "MEMBERSHIP_ACCEPT", { "Object-Contract-Id": membershipId }, {});
 }
 
 async function membershipRejectHandler(argv) {
-  let user = await loadKeyFile();
-
   const membershipId = argv.membershipId;
 
-  const initialState = await getContract(membershipId, user.wallet).readState();
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  user.membershipContractTxId = membershipId;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(initialState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("MEMBERSHIP_REJECT", { "Object-Contract-Id": membershipId }, {});
-  console.log(response);
-  process.exit(0);
+  await membershipUpdate(membershipId, "MEMBERSHIP_REJECT", { "Object-Contract-Id": membershipId }, {});
 }
 
 async function membershipRevokeHandler(argv) {
-  let user = await loadKeyFile();
-
   const membershipId = argv.membershipId;
+  await objectUpdate(membershipId, "MEMBERSHIP_REVOKE", { "Object-Contract-Id": membershipId }, {});
+}
 
-  const initialState = await getContract(membershipId, user.wallet).readState();
-  user.contract = getContract(initialState.state.vaultId, user.wallet);
-  user.membershipContractTxId = membershipId;
-
-  const wallet = new WalletFactory("ARWEAVE", user.wallet).walletInstance();
-  const encryptionKeys = fromMembershipContract(initialState);
-  const svpWrapper = new SVPWrapper(wallet, encryptionKeys, user.contract, getContract(user.membershipContractTxId, user.wallet));
-  const response = await svpWrapper.dispatch("MEMBERSHIP_REVOKE", { "Object-Contract-Id": membershipId }, {});
+async function membershipUpdate(membershipId, actionRef, header, body) {
+  const wallet = await loadWallet();
+  const membershipContract = getContract(membershipId, wallet);
+  const membershipState = await contract.readState();
+  const vaultContract = getContract(membershipState.state.vaultId, wallet.wallet);
+  const encryptionKeys = fromMembershipContract(membershipState.state);
+  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const response = await wrapper.dispatch(actionRef, header, body);
   console.log(response);
   process.exit(0);
 }
 
-async function getMembership(vaultId, user) {
-  const vaultState = await getContract(vaultId, user.wallet).readState();
-  for (let membershipId of vaultState.state.memberships) {
-    const memberState = await getContract(membershipId, user.wallet).readState();
-    if (memberState.state.address === user.address) {
-      return memberState.state;
+async function objectUpdate(objectId, actionRef, header, body) {
+  const wallet = await loadWallet();
+  const { vaultContract, membershipContract, membershipState } = await validateObjectContext(objectId, wallet);
+  const encryptionKeys = fromMembershipContract(membershipState);
+  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const response = await wrapper.dispatch(actionRef, header, body);
+  console.log(response);
+  process.exit(0);
+}
+
+async function objectCreate(vaultId, actionRef, header, body) {
+  const wallet = await loadWallet();
+  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(vaultId, wallet);
+  const encryptionKeys = fromMembershipContract(membershipState);
+  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const response = await wrapper.dispatch(actionRef, header, body);
+  console.log(response);
+  process.exit(0);
+}
+
+async function validateVaultContext(vaultId, wallet) {
+  const vaultContract = getContract(vaultId, wallet.wallet);
+  const vaultState = await vaultContract.readState();
+  const address = await wallet.getAddress();
+  if (vaultState && vaultState.state && vaultState.state.memberships) {
+    for (let membershipId of vaultState.state.memberships) {
+      const membershipContract = getContract(membershipId, wallet.wallet);
+      const memberState = await membershipContract.readState();
+      if (memberState.state.address === address) {
+        return { membershipState: memberState.state, vaultContract, membershipContract };
+      }
     }
   }
+  console.error("Unable to validate vault context: " + vaultId);
+  process.exit(0);
+}
+
+async function validateObjectContext(objectId, wallet) {
+  const objectState = await getContract(objectId, wallet.wallet).readState();
+  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(objectState.state.vaultId, wallet);
+  return { objectState, vaultContract, membershipContract, membershipState }
 }
 
 module.exports = {
@@ -574,5 +394,6 @@ module.exports = {
   objectReadHandler,
   walletConfigureHandler,
   walletGenerateHandler,
-  walletImportHandler
+  walletImportHandler,
+  walletRecoverHandler
 }

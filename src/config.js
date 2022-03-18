@@ -1,6 +1,6 @@
-exports.protocolName = "SVP-Test";
+exports.protocolName = "Akord-Test";
 exports.protocolVersion = "0.1";
-exports.appName = "App-Test";
+exports.appName = "Akord-CLI-Test";
 exports.codeSources = {
   "Vault-Contract-Src": "2DExgTMZpa6ZVx2-SETKfPYUZ-UcY0YgZvWf_SLhyBc",
   "Membership-Contract-Src": "G3uTA1WrRmfKI225wNRfAEhyhYFoOn-XVqWIzs-YMIA",

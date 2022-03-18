@@ -30,7 +30,8 @@ const {
   objectReadHandler,
   walletConfigureHandler,
   walletGenerateHandler,
-  walletImportHandler
+  walletImportHandler,
+  walletRecoverHandler
 } = require('./handlers');
 
 clear();
@@ -58,13 +59,24 @@ const walletGenerateCommand = {
 };
 
 const walletImportCommand = {
-  command: 'wallet:import <mnemonic>',
-  describe: 'import the wallet from the mnemonic',
+  command: 'wallet:import <email> <password>',
+  describe: 'import the mnemonic from cognito',
+  builder: () => {
+    yargs
+    .positional('email', { describe: 'email' })
+    .positional('password', { describe: 'password' })
+  },
+  handler: walletImportHandler,
+};
+
+const walletRecoverCommand = {
+  command: 'wallet:recover <mnemonic>',
+  describe: 'recover the wallet from the mnemonic',
   builder: () => {
     yargs
       .positional('mnemonic', { describe: '12-word seed phrase' })
   },
-  handler: walletImportHandler,
+  handler: walletRecoverHandler,
 };
 
 const vaultCreateCommand = {
@@ -311,6 +323,7 @@ const objectReadCommand = {
 };
 
 yargs
+  .command(walletRecoverCommand)
   .command(walletConfigureCommand)
   .command(walletGenerateCommand)
   .command(walletImportCommand)
