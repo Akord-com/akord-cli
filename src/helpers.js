@@ -33,7 +33,6 @@ const getEncryptedBackupPhraseFromCognito = async (email, password) => {
             console.log(err.message || JSON.stringify(err));
             return reject;
           }
-          console.log('attributes: ' + result);
           const attributes = result.reduce(function (
             attributesObject,
             attribute

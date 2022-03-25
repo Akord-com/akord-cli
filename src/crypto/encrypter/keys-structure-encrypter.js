@@ -1,6 +1,6 @@
 const cryptoHelper = require('../crypto-helpers');
 const Encrypter = require('./encrypter');
-const { base64ToJson } = require('../encoding-helpers');
+const { base64ToJson, arrayToBase64 } = require('../encoding-helpers');
 
 /**
  * Keys structure de-/encryption specific methods
@@ -18,9 +18,10 @@ module.exports = (function () {
       if (this.keys && (!this.decryptedKeys || this.decryptedKeys.length < this.keys.length)) {
         try {
           const promises = this.keys.map(async key => {
-            const privateKey = await this.wallet.decrypt(key.encPrivateKey)
+            const privateKey = await this.wallet.decrypt(key.encPrivateKey);
+            const publicKey = await this.wallet.decrypt(key.publicKey);
             this.decryptedKeys.push({
-              publicKey: key.publicKey,
+              publicKey: publicKey,
               privateKey: privateKey
             })
           })
@@ -40,22 +41,30 @@ module.exports = (function () {
           this.decryptedKeys[x].privateKey,
           this.publicKey
         )
+        const encPublicKey = await this.wallet.encryptToPublicKey(
+          this.decryptedKeys[x].publicKey,
+          this.publicKey
+        )
         keys.push({
-          publicKey: this.decryptedKeys[x].publicKey,
+          publicKey: encPublicKey,
           encPrivateKey: encPrivateKey
         })
       }
       return keys
     }
 
-    async encryptMemberKey(privateKey) {
+    async encryptMemberKey(keyPair) {
       await this._decryptKeys()
       // encrypt private key for member's wallet address
       const encPrivateKey = await this.wallet.encryptToPublicKey(
-        privateKey,
+        keyPair.privateKey,
         this.publicKey
       )
-      return encPrivateKey
+      const publicKey = await this.wallet.encryptToPublicKey(
+        keyPair.publicKey,
+        this.publicKey
+      )
+      return { publicKey, encPrivateKey }
     }
 
     async decryptRaw(encryptedPayload, decode = true) {
@@ -64,7 +73,7 @@ module.exports = (function () {
         await this._decryptKeys()
         const payload = decode ? base64ToJson(encryptedPayload) : encryptedPayload
         const key = this.decryptedKeys.filter(
-          key => key.publicKey === payload.publicKey
+          key => arrayToBase64(key.publicKey) === payload.publicKey
         )
         if (key.length === 0) {
           console.log('The user does not have a correct key to decrypt the data.')

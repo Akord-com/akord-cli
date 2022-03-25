@@ -304,17 +304,10 @@ async function encryptRawWithPublicKey(publicKey, plaintext) {
 async function encryptRawForArweavePublicKey(publicKey, plaintext) {
   const string = arrayToBase64(plaintext);
   const keyBuf = nodeCrypto.randomBytes(256);
-  // const encryptedData = await arweave.crypto.encrypt(new TextEncoder().encode(string), keyBuf);
-  // const encryptedData = await arweave.crypto.encrypt(new TextEncoder().encode(string), keyBuf);
   const derivedKey = nodeCrypto.pbkdf2Sync(keyBuf, (salt = salt ? salt : "salt"), 100000, 32, "sha256");
   const iv = nodeCrypto.randomBytes(16);
   const cipher = nodeCrypto.createCipheriv("aes-256-cbc", derivedKey, iv);
   const encryptedData = Buffer.concat([iv, cipher.update(new TextEncoder().encode(string)), cipher.final()]);
-  // const encryptedData = await crypto.subtle.encrypt(
-  //   { name: 'RSA-OAEP' },
-  //   new TextEncoder().encode(string),
-  //   keyBuf
-  // );
   const encryptedKey = await crypto.subtle.encrypt(
     { name: 'RSA-OAEP' },
     publicKey,
@@ -336,8 +329,6 @@ async function encryptRawForAddress(address, plaintext) {
   const iv = nodeCrypto.randomBytes(16);
   const cipher = nodeCrypto.createCipheriv("aes-256-cbc", derivedKey, iv);
   const encryptedData = Buffer.concat([iv, cipher.update(new TextEncoder().encode(string)), cipher.final()]);
-  //const encryptedData = await arweave.crypto.encrypt(new TextEncoder().encode(string), keyBuf);
-
   const encryptedKey = await crypto.subtle.encrypt(
     { name: 'RSA-OAEP' },
     publicKeyJWK,

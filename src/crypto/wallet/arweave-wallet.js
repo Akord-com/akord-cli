@@ -117,6 +117,26 @@ module.exports = (function () {
       return address;
     }
 
+    async publicKeyRaw() {
+      let publicKey;
+      if (this.walletType === "JWK") {
+        publicKey = this.wallet.n
+      } else {
+        const address = await arweave.wallets.jwkToAddress(
+          this.walletType === "JWK"
+            ? this.wallet
+            : "use-wallet"
+        );
+        publicKey = await getPublicKeyFromAddress(address);
+      }
+      return cryptoHelper.importRSAPublicKey(publicKey);
+    }
+
+    async getPublicKeyFromAddress(address) {
+      const publicKey = await getPublicKeyFromAddress(address);
+      return cryptoHelper.importRSAPublicKey(publicKey);
+    }
+
     // async verifySignature(encryptedString) {
     //   const verified = await arweave.crypto.verify(
     //     publicKey,

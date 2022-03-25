@@ -7,6 +7,9 @@ const constants = require('../constants');
 const hdkey = require('hdkey');
 const _sodium = require('libsodium-wrappers');
 const nacl = require('tweetnacl')
+const crypto = require("crypto");
+const { bech32 } = require("bech32");
+const users = require("../../users.json");
 
 module.exports = (function () {
   class MnemonicWallet {
@@ -20,7 +23,6 @@ module.exports = (function () {
 
     static async create() {
       const mnemonic = await mnemonicKeys.generateMnemonic();
-      console.log("Please be patient, generating the wallet may take a while");
       const jwk = await mnemonicKeys.getKeyFromMnemonic(mnemonic.toString());
       const wallet = new MnemonicWallet(mnemonic, jwk);
       await wallet.deriveKeys()
@@ -122,7 +124,6 @@ module.exports = (function () {
     }
 
     async deriveJWK() {
-      console.log("Please be patient, generating the wallet may take a while");
       const jwk = await mnemonicKeys.getKeyFromMnemonic(this.backupPhrase.toString());
       this.wallet = jwk
     }
@@ -260,6 +261,33 @@ module.exports = (function () {
           : "use-wallet"
       );
       return address;
+    }
+
+    async getAkordAddress() {
+      const sha256Digest = crypto
+        .createHash("sha256")
+        .update(this.publicKeyRaw(), "hex")
+        .digest("hex");
+
+      const ripemd160Digest = crypto
+        .createHash("ripemd160")
+        .update(sha256Digest, "hex")
+        .digest("hex");
+
+      const bech32Words = bech32.toWords(Buffer.from(ripemd160Digest, "hex"));
+      const words = new Uint8Array([0, ...bech32Words]);
+      const address = bech32.encode("akord", words);
+      console.log(address);
+      return address;
+    }
+
+    async getPublicKeyFromAddress(address) {
+      // TODO: call Akord API here
+      let publicKey;
+      Object.keys(users).map(function (key, index) {
+        if (key === address) publicKey = users[key].publicKey
+      });
+      return base64ToArray(publicKey);
     }
 
     // async verifySignature(encryptedString) {

@@ -1,18 +1,10 @@
-const { getPublicKeyFromAddress } = require("./arweave-helpers");
-const { codeSources } = require("./config");
 const cryptoHelper = require("./crypto/crypto-helpers");
-const {
-  getContract,
-  deployContract,
-  postContractTransaction,
-  initContract,
-  constructHeader
-} = require("./helpers");
+const { getContract, constructHeader } = require("./helpers");
+const { initContractId, postTransaction } = require("./bundler");
 const { arrayToBase64, jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
 const { tags, objectTypes, role, commands, status } = require('./constants');
-
-const contractSrcPostfix = "-Contract-Src";
+const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encrypter");
 
 module.exports = (function () {
   class Wrapper {
@@ -40,9 +32,8 @@ module.exports = (function () {
       this.dataEncrypter.setPublicKey(publicKey)
     }
 
-    async setKeysEncryptionPublicKey(publicKey) {
-      const publicKeyJWK = await cryptoHelper.importRSAPublicKey(publicKey);
-      this.keysEncrypter.setRawPublicKey(publicKeyJWK)
+    setKeysEncryptionPublicKey(publicKey) {
+      this.keysEncrypter.setRawPublicKey(publicKey)
     }
 
     setRawKeysEncryptionPublicKey(publicKey) {
@@ -74,28 +65,23 @@ module.exports = (function () {
         transactions: []
       };
 
-      if (this.vaultContract) {
-        const state = await this.getLatestVaultState();
-        this.setDataEncryptionPublicKey(state.publicKeys[state.publicKeys.length - 1]);
+      if (this.membershipContract) {
+        await this.dataEncrypter._decryptKeys();
+        this.setRawDataEncryptionPublicKey(this.dataEncrypter.keys[this.dataEncrypter.keys.length - 1].publicKey);
       }
 
       switch (actionRef) {
         case 'VAULT_CREATE': {
           // generate a new vault key pair
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair()
-          const contractTxId = await deployContract(
-            codeSources[objectTypes.VAULT + contractSrcPostfix],
-            {},
-            constructHeader(),
-            this.wallet.wallet
-          );
+          const contractTxId = await initContractId(objectTypes.VAULT, {});
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.VAULT,
             "id": contractTxId,
           })
           headerPayload[tags.COMMAND] = commands.VAULT_CREATE;
-          bodyPayload.publicKeys = [arrayToBase64(publicKey)]
+          // bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           bodyPayload.keyRotate = {
             publicKey: publicKey,
             privateKey: privateKey
@@ -105,20 +91,17 @@ module.exports = (function () {
           headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
 
           const address = await this.wallet.getAddress();
-          const membershipContractTxId = await initContract(
-            codeSources[objectTypes.MEMBERSHIP + contractSrcPostfix],
-            {
-              [tags.VAULT_CONTRACT_ID]: contractTxId,
-              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
-              [tags.MEMBER_ADDRESS]: address
-            }, this.wallet.wallet);
+          const membershipContractTxId = await initContractId(objectTypes.MEMBERSHIP, {
+            [tags.VAULT_CONTRACT_ID]: contractTxId,
+            [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
+            [tags.MEMBER_ADDRESS]: address
+          });
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.MEMBERSHIP,
             "id": membershipContractTxId,
           })
-          const memberPublicKey = await this.wallet.getPublicKey();
-          await this.setKeysEncryptionPublicKey(memberPublicKey);
+          this.setRawKeysEncryptionPublicKey(this.wallet.publicKeyRaw());
           this.setRawDataEncryptionPublicKey(publicKey);
 
           const memberContract = getContract(membershipContractTxId, this.wallet.wallet);
@@ -136,16 +119,16 @@ module.exports = (function () {
           break
         case 'MEMBERSHIP_INVITE': {
           bodyPayload.memberKeys = [];
-          const publicKey = await getPublicKeyFromAddress(bodyPayload.address);
-          await this.setKeysEncryptionPublicKey(publicKey)
+          const publicKey = await this.wallet.getPublicKeyFromAddress(bodyPayload.address);
+          this.setRawKeysEncryptionPublicKey(publicKey);
           headerPayload[tags.COMMAND] = commands.MEMBERSHIP_INVITE
-          const membershipContractTxId = await initContract(
-            codeSources[objectTypes.MEMBERSHIP + contractSrcPostfix],
+          const membershipContractTxId = await initContractId(
+            objectTypes.MEMBERSHIP,
             {
               [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
               [tags.MEMBER_ADDRESS]: bodyPayload.address
-            }, this.wallet.wallet);
+            });
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.MEMBERSHIP,
@@ -178,7 +161,12 @@ module.exports = (function () {
             const memberState = await memberContract.readState();
             if (member !== header.modelId
               && (memberState.state.status === role.ACCEPTED || memberState.state.status === role.PENDING)) {
-              const memberPublicKey = await getPublicKeyFromAddress(memberState.state.address);
+              const memberPublicKey = await this.wallet.getPublicKeyFromAddress(memberState.state.address);
+              this.memberKeysEncrypter = new KeysStructureEncrypter(
+                this.wallet,
+                this.keysEncrypter.keys,
+                memberPublicKey
+              );
               const publicKeyJWK = await cryptoHelper.importRSAPublicKey(memberPublicKey);
               const encPrivateKey = await cryptoHelper.encryptRawForArweavePublicKey(
                 publicKeyJWK,
@@ -196,16 +184,15 @@ module.exports = (function () {
               ];
             }
           }
-          bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           break;
         }
         case 'STACK_CREATE':
-          const stackContractTxId = await initContract(
-            codeSources[objectTypes.STACK + contractSrcPostfix],
+          const stackContractTxId = await initContractId(
+            objectTypes.STACK,
             {
               [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
-            }, this.wallet.wallet);
+            });
           headerPayload[tags.OBJECT_CONTRACT_ID] = stackContractTxId;
           this.setContractId(stackContractTxId);
           response.transactions.push({
@@ -222,12 +209,12 @@ module.exports = (function () {
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_CREATE':
-          const folderContractTxId = await initContract(
-            codeSources[objectTypes.FOLDER + contractSrcPostfix],
+          const folderContractTxId = await initContractId(
+            objectTypes.FOLDER,
             {
               [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
-            }, this.wallet.wallet);
+            });
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.FOLDER,
@@ -239,12 +226,12 @@ module.exports = (function () {
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break
         case 'MEMO_CREATE':
-          const memoContractTxId = await initContract(
-            codeSources[objectTypes.MEMO + contractSrcPostfix],
+          const memoContractTxId = await initContractId(
+            objectTypes.MEMO,
             {
               [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
-            }, this.wallet.wallet);
+            });
           headerPayload[tags.OBJECT_CONTRACT_ID] = memoContractTxId;
           this.setContractId(memoContractTxId);
           response.transactions.push({
@@ -327,11 +314,10 @@ module.exports = (function () {
       const encryptedBody = await this.constructBody(bodyPayload);
 
       const txInput = await this.signTransaction(fullHeader, encryptedBody);
-      const { txId, pstTransfer } = await postContractTransaction(
+      const { txId, pstTransfer } = await postTransaction(
         headerPayload[tags.OBJECT_CONTRACT_ID],
         { function: "write", ...txInput },
-        fullHeader,
-        this.wallet.wallet
+        fullHeader
       );
       response.objectId = headerPayload[tags.OBJECT_CONTRACT_ID];
       response.vaultId = this.vaultContract.txId();
@@ -381,15 +367,7 @@ module.exports = (function () {
               break
             }
             case 'keyRotate': {
-              const encPrivateKey = await this.keysEncrypter.encryptMemberKey(
-                payload[fieldName].privateKey
-              );
-              encryptedBody.keys = [
-                {
-                  publicKey: arrayToBase64(payload[fieldName].publicKey),
-                  encPrivateKey: encPrivateKey
-                }
-              ];
+              encryptedBody.keys = [await this.keysEncrypter.encryptMemberKey(payload[fieldName])];
               break
             }
             default:

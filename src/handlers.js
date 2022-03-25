@@ -316,7 +316,7 @@ async function membershipRevokeHandler(argv) {
 async function membershipUpdate(membershipId, actionRef, header, body) {
   const wallet = await loadWallet();
   const membershipContract = getContract(membershipId, wallet);
-  const membershipState = await contract.readState();
+  const membershipState = await membershipContract.readState();
   const vaultContract = getContract(membershipState.state.vaultId, wallet.wallet);
   const encryptionKeys = fromMembershipContract(membershipState.state);
   const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
@@ -348,7 +348,7 @@ async function objectCreate(vaultId, actionRef, header, body) {
 async function validateVaultContext(vaultId, wallet) {
   const vaultContract = getContract(vaultId, wallet.wallet);
   const vaultState = await vaultContract.readState();
-  const address = await wallet.getAddress();
+  const address = await wallet.getAkordAddress();
   if (vaultState && vaultState.state && vaultState.state.memberships) {
     for (let membershipId of vaultState.state.memberships) {
       const membershipContract = getContract(membershipId, wallet.wallet);
@@ -364,7 +364,7 @@ async function validateVaultContext(vaultId, wallet) {
 
 async function validateObjectContext(objectId, wallet) {
   const objectState = await getContract(objectId, wallet.wallet).readState();
-  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(objectState.state.vaultId, wallet);
+  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(objectState.state.vaultId || objectState.state.id, wallet);
   return { objectState, vaultContract, membershipContract, membershipState }
 }
 
