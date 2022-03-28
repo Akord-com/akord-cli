@@ -20,6 +20,7 @@ const {
 const { arweave, getPublicKeyFromAddress } = require('../arweave-helpers');
 const nodeCrypto = require('crypto');
 const crypto = nodeCrypto.webcrypto;
+const { bech32 } = require("bech32");
 
 /**
  * Export CryptoKey object to base64 encoded string
@@ -122,6 +123,41 @@ async function signString(payload, privateKey) {
   )
   const signature = await signHash(msgHash, privateKey)
   return signature
+}
+
+async function verifyString(payload, publicKey, signature) {
+  const msgHash = await crypto.subtle.digest(
+    HASH_ALGORITHM,
+    stringToArray(payload),
+  )
+  return verifyHash(msgHash, publicKey, signature);
+}
+
+async function verifyHash(msgHash, publicKey, signature) {
+  const signatureByteArray = base64ToArray(signature);
+  const msgHashByteArray = Buffer.from(msgHash);
+  const publicKeyByteArray = base64ToArray(publicKey);
+
+  await _sodium.ready;
+  const sodium = _sodium;
+  return sodium.crypto_sign_verify_detached(signatureByteArray, msgHashByteArray, publicKeyByteArray);
+}
+
+async function deriveAddress(publicKey, prefix) {
+  const sha256Digest = nodeCrypto
+    .createHash("sha256")
+    .update(publicKey, "hex")
+    .digest("hex");
+
+  const ripemd160Digest = nodeCrypto
+    .createHash("ripemd160")
+    .update(sha256Digest, "hex")
+    .digest("hex");
+
+  const bech32Words = bech32.toWords(Buffer.from(ripemd160Digest, "hex"));
+  const words = new Uint8Array([0, ...bech32Words]);
+  const address = bech32.encode(prefix, words);
+  return address;
 }
 
 /**
@@ -364,18 +400,18 @@ const importRSAPublicKey = async (publicKey) => {
 }
 
 const importRSACryptoKey = async (jwk) => {
-    return await crypto.subtle.importKey(
-      "jwk",
-      jwk,
-      {
-        name: ASYMMETRIC_KEY_ALGORITHM,
-        hash: {
-          name: HASH_ALGORITHM
-        },
+  return await crypto.subtle.importKey(
+    "jwk",
+    jwk,
+    {
+      name: ASYMMETRIC_KEY_ALGORITHM,
+      hash: {
+        name: HASH_ALGORITHM
       },
-      false,
-      ["decrypt"]
-    );
+    },
+    false,
+    ["decrypt"]
+  );
 }
 
 /**
@@ -474,7 +510,7 @@ async function encryptHybridRaw(plaintext, publicKey, encode = true) {
   const encryptedPayload = {
     encryptedData: encryptedData,
     encryptedKey: encAccessKey,
-    publicKey: arrayToBase64(publicKey)
+    // publicKey: arrayToBase64(publicKey) TODO: use vault public address or public key id
   }
   if (encode) {
     return jsonToBase64(encryptedPayload)
@@ -541,6 +577,7 @@ async function derivePasswords(password) {
 }
 
 module.exports = {
+  deriveAddress,
   encryptRawForAddress,
   exportKeyToBase64,
   importKeyFromBase64,
@@ -548,6 +585,8 @@ module.exports = {
   digest,
   signHash,
   signString,
+  verifyHash,
+  verifyString,
   encrypt,
   decrypt,
   deriveKey,

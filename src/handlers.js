@@ -348,7 +348,7 @@ async function objectCreate(vaultId, actionRef, header, body) {
 async function validateVaultContext(vaultId, wallet) {
   const vaultContract = getContract(vaultId, wallet.wallet);
   const vaultState = await vaultContract.readState();
-  const address = await wallet.getAkordAddress();
+  const address = await wallet.getAddress();
   if (vaultState && vaultState.state && vaultState.state.memberships) {
     for (let membershipId of vaultState.state.memberships) {
       const membershipContract = getContract(membershipId, wallet.wallet);

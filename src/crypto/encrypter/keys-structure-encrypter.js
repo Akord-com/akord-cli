@@ -71,15 +71,25 @@ module.exports = (function () {
       if (encryptedPayload === null) return null
       try {
         await this._decryptKeys()
-        const payload = decode ? base64ToJson(encryptedPayload) : encryptedPayload
-        const key = this.decryptedKeys.filter(
-          key => arrayToBase64(key.publicKey) === payload.publicKey
-        )
-        if (key.length === 0) {
-          console.log('The user does not have a correct key to decrypt the data.')
-          // throw new Error('The user does not have a correct key to decrypt the data.')
+        // const payload = decode ? base64ToJson(encryptedPayload) : encryptedPayload
+        // const key = this.decryptedKeys.filter(
+        //   key => arrayToBase64(key.publicKey) === payload.publicKey
+        // )
+        // if (key.length === 0) {
+        //   console.log('The user does not have a correct key to decrypt the data.')
+        //   // throw new Error('The user does not have a correct key to decrypt the data.')
+        // }
+        let decryptedData;
+        for (let keyPair of this.decryptedKeys) {
+          try {
+            decryptedData = cryptoHelper.decryptHybridRaw(encryptedPayload, keyPair.privateKey, decode);
+          } catch (error) { }
         }
-        return cryptoHelper.decryptHybridRaw(encryptedPayload, key[0].privateKey, decode)
+        if (!decryptedData) {
+          console.log('The user does not have a correct key to decrypt the data.')
+        }
+        return decryptedData
+        // return cryptoHelper.decryptHybridRaw(encryptedPayload, key[0].privateKey, decode)
       } catch (error) {
         console.log(error)
         // throw new Error(error)

@@ -7,8 +7,6 @@ const constants = require('../constants');
 const hdkey = require('hdkey');
 const _sodium = require('libsodium-wrappers');
 const nacl = require('tweetnacl')
-const crypto = require("crypto");
-const { bech32 } = require("bech32");
 const users = require("../../users.json");
 
 module.exports = (function () {
@@ -255,30 +253,7 @@ module.exports = (function () {
     }
 
     async getAddress() {
-      const address = await arweave.wallets.jwkToAddress(
-        this.walletType === "JWK"
-          ? this.wallet
-          : "use-wallet"
-      );
-      return address;
-    }
-
-    async getAkordAddress() {
-      const sha256Digest = crypto
-        .createHash("sha256")
-        .update(this.publicKeyRaw(), "hex")
-        .digest("hex");
-
-      const ripemd160Digest = crypto
-        .createHash("ripemd160")
-        .update(sha256Digest, "hex")
-        .digest("hex");
-
-      const bech32Words = bech32.toWords(Buffer.from(ripemd160Digest, "hex"));
-      const words = new Uint8Array([0, ...bech32Words]);
-      const address = bech32.encode("akord", words);
-      console.log(address);
-      return address;
+      return cryptoHelper.deriveAddress(this.signingPublicKeyRaw(), "akord");
     }
 
     async getPublicKeyFromAddress(address) {
@@ -289,14 +264,6 @@ module.exports = (function () {
       });
       return base64ToArray(publicKey);
     }
-
-    // async verifySignature(encryptedString) {
-    //   const verified = await arweave.crypto.verify(
-    //     publicKey,
-    //     SmartWeave.arweave.utils.stringToBuffer(`${header}${body}`),
-    //     SmartWeave.arweave.utils.b64UrlToBuffer(signature)
-    //   );
-    // return verified;
   }
 
   async function decryptWithPassword(password, strPayload) {

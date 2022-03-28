@@ -67,7 +67,7 @@ module.exports = (function () {
 
       if (this.membershipContract) {
         await this.dataEncrypter._decryptKeys();
-        this.setRawDataEncryptionPublicKey(this.dataEncrypter.keys[this.dataEncrypter.keys.length - 1].publicKey);
+        this.setRawDataEncryptionPublicKey(this.dataEncrypter.decryptedKeys[this.dataEncrypter.decryptedKeys.length - 1].publicKey);
       }
 
       switch (actionRef) {
@@ -380,10 +380,11 @@ module.exports = (function () {
     }
 
     async signTransaction(header, body) {
-      const publicKey = await this.wallet.getPublicKey();
+      const publicKey = await this.wallet.signingPublicKey();
       const encodedHeader = jsonToBase64(header);
       const encodedBody = jsonToBase64(body);
-      const signature = await this.wallet.sign(`${encodedHeader}${encodedBody}`);
+      const signature = await cryptoHelper.signString(`${encodedHeader}${encodedBody}`, this.wallet.signingPrivateKeyRaw());
+      // const signature = await this.wallet.sign(`${encodedHeader}${encodedBody}`);
       return { header: encodedHeader, body: encodedBody, publicKey, signature };
     }
 
