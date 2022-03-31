@@ -19,7 +19,7 @@ module.exports = (function () {
         try {
           const promises = this.keys.map(async key => {
             const privateKey = await this.wallet.decrypt(key.encPrivateKey);
-            const publicKey = await this.wallet.decrypt(key.publicKey);
+            const publicKey = await this.wallet.decrypt(key.encPublicKey);
             this.decryptedKeys.push({
               publicKey: publicKey,
               privateKey: privateKey
@@ -46,7 +46,7 @@ module.exports = (function () {
           this.publicKey
         )
         keys.push({
-          publicKey: encPublicKey,
+          encPublicKey: encPublicKey,
           encPrivateKey: encPrivateKey
         })
       }
@@ -60,11 +60,11 @@ module.exports = (function () {
         keyPair.privateKey,
         this.publicKey
       )
-      const publicKey = await this.wallet.encryptToPublicKey(
+      const encPublicKey = await this.wallet.encryptToPublicKey(
         keyPair.publicKey,
         this.publicKey
       )
-      return { publicKey, encPrivateKey }
+      return { encPublicKey, encPrivateKey }
     }
 
     async decryptRaw(encryptedPayload, decode = true) {

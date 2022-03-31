@@ -1,4 +1,5 @@
 const { codeSources } = require("./config");
+const { tags:protocolTags } = require("./constants");
 const { postContractTransaction, initContract } = require("./helpers");
 const { verifyString, deriveAddress } = require("./crypto/crypto-helpers");
 const contractSrcPostfix = "-Contract-Src";
@@ -22,7 +23,6 @@ function initContractId(objectType, tags) {
 }
 
 async function validateSignature(input, tags) {
-  console.log(input)
   const { header, body, publicKey, signature } = input;
   const verified = await verifyString(
     `${header}${body}`,
@@ -34,7 +34,7 @@ async function validateSignature(input, tags) {
     throw new Error("Invalid signature.");
   }
   const signerAddress = await deriveAddress(base64ToArray(publicKey), "akord");
-  if (signerAddress !== tags["Signer-Address"]) {
+  if (signerAddress !== tags[protocolTags.SIGNER_ADDRESS]) {
     console.error("Invalid signer");
     throw new Error("Invalid signer.");
   }
@@ -43,7 +43,7 @@ async function validateSignature(input, tags) {
 async function postTransaction(contractId, input, tags) {
   const wallet = loadWallet("bundler");
   await validateSignature(input, tags);
-  tags["Signature"] = input.signature;
+  tags[protocolTags.SIGNATURE] = input.signature;
   return postContractTransaction(
     contractId,
     { function: "write", header: input.header, body: input.body },

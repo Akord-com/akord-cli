@@ -1,10 +1,12 @@
 {
-  "akord1qznrz37ps0ylgwgreggva0g5y49ucpcydukl299": {
+  "akord1qlwp974kdsgz0rfh9sk0q40e7h3sf3vxkjdnc50": {
     "email": "weronika.kolodziejak+dark@gmail.com",
-    "publicKey": "jlilxmmt3/I50+2lP2gX96EmscDJT9QuBatiTmKIwWc="
+    "publicKey": "jlilxmmt3/I50+2lP2gX96EmscDJT9QuBatiTmKIwWc=",
+    "signingPublicKey": "wK7y85KE/QWGsumob9S+vRILW3DPjKwsJCnAnnhzUbw="
   },
-  "akord1qj8k6jjycq3ap2uccfy97c892uqg24gkquuc0lu": {
+  "akord1qs2jx3tewun7nsk6hj5vatecvuxfzewejuwqu09": {
     "email": "weronika.kolodziejak+topup@gmail.com",
-    "publicKey": "mRFhgGL1Xw2smKDHuofsSBI/xamI4dtTUnl23/t9kjg="
+    "publicKey": "iWAq+R0Isc5UsshXLkouDJUlU3JCmbDaMOl5dvIadh4=",
+    "signingPublicKey": "7Km+h0sSQ1Uc8zJ63XHqYi+yRt3JLnI1haRZzvFAhcQ="
   }
 }

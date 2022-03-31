@@ -1,7 +1,7 @@
 const cryptoHelper = require("./crypto/crypto-helpers");
 const { getContract, constructHeader } = require("./helpers");
 const { initContractId, postTransaction } = require("./bundler");
-const { arrayToBase64, jsonToBase64 } = require('./crypto/encoding-helpers');
+const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
 const { tags, objectTypes, role, commands, status } = require('./constants');
 const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encrypter");
@@ -81,7 +81,6 @@ module.exports = (function () {
             "id": contractTxId,
           })
           headerPayload[tags.COMMAND] = commands.VAULT_CREATE;
-          // bodyPayload.publicKeys = [arrayToBase64(publicKey)]
           bodyPayload.keyRotate = {
             publicKey: publicKey,
             privateKey: privateKey
@@ -89,6 +88,7 @@ module.exports = (function () {
           const contract = getContract(contractTxId, this.wallet.wallet);
           this.setVaultContract(contract);
           headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
+          bodyPayload.publicSigningKey = this.wallet.signingPublicKeyRaw();
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContractId(objectTypes.MEMBERSHIP, {
@@ -143,45 +143,40 @@ module.exports = (function () {
         case 'MEMBERSHIP_ACCEPT':
           headerPayload[tags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
-          break
+          bodyPayload.publicSigningKey = this.wallet.signingPublicKeyRaw();
+          break;
         case 'MEMBERSHIP_REJECT':
           headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REJECT;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
-          break
+          break;
         case 'MEMBERSHIP_REVOKE': {
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair();
           headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REVOKE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = this.membershipContract.txId();
           const vaultState = await this.getLatestVaultState();
+          bodyPayload.keys = [];
           for (let member of vaultState.memberships) {
             const memberContract = getContract(member, this.wallet.wallet);
             const memberState = await memberContract.readState();
-            if (member !== header.modelId
-              && (memberState.state.status === role.ACCEPTED || memberState.state.status === role.PENDING)) {
+            if (member !== headerPayload[tags.OBJECT_CONTRACT_ID]
+              && (memberState.state.status === status.ACCEPTED || memberState.state.status === status.PENDING)) {
               const memberPublicKey = await this.wallet.getPublicKeyFromAddress(memberState.state.address);
-              this.memberKeysEncrypter = new KeysStructureEncrypter(
+              const memberKeysEncrypter = new KeysStructureEncrypter(
                 this.wallet,
                 this.keysEncrypter.keys,
                 memberPublicKey
               );
-              const publicKeyJWK = await cryptoHelper.importRSAPublicKey(memberPublicKey);
-              const encPrivateKey = await cryptoHelper.encryptRawForArweavePublicKey(
-                publicKeyJWK,
-                privateKey
-              )
-              bodyPayload.keys = [
+              const keys = await memberKeysEncrypter.encryptMemberKey({
+                publicKey: publicKey,
+                privateKey: privateKey
+              });
+              bodyPayload.keys.push(
                 {
                   id: member,
                   address: memberState.state.address,
-                  keys: [{
-                    publicKey: arrayToBase64(publicKey),
-                    encPrivateKey: encPrivateKey
-                  }]
+                  keyPair: keys
                 }
-              ];
+              );
             }
           }
           break;
@@ -203,11 +198,11 @@ module.exports = (function () {
           headerPayload[tags.COMMAND] = commands.STACK_CREATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.name = bodyPayload.file.name;
-          break
+          break;
         case 'STACK_RENAME':
           headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
-          break
+          break;
         case 'FOLDER_CREATE':
           const folderContractTxId = await initContractId(
             objectTypes.FOLDER,
@@ -224,7 +219,7 @@ module.exports = (function () {
           this.setContractId(folderContractTxId);
           headerPayload[tags.COMMAND] = commands.FOLDER_CREATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
-          break
+          break;
         case 'MEMO_CREATE':
           const memoContractTxId = await initContractId(
             objectTypes.MEMO,
@@ -241,32 +236,32 @@ module.exports = (function () {
           })
           headerPayload[tags.COMMAND] = commands.MEMO_CREATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
-          break
+          break;
         case 'VAULT_ARCHIVE':
           headerPayload[tags.COMMAND] = commands.VAULT_ARCHIVE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
-          break
+          break;
         case 'VAULT_RESTORE':
           headerPayload[tags.COMMAND] = commands.VAULT_RESTORE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
-          break
+          break;
         case 'STACK_REVOKE':
           headerPayload[tags.COMMAND] = commands.STACK_REVOKE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.REVOKED
-          break
+          break;
         case 'STACK_REVOKE':
           headerPayload[tags.COMMAND] = commands.STACK_RESTORE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.ACTIVE
-          break
+          break;
         case 'STACK_DELETE':
           headerPayload[tags.COMMAND] = commands.STACK_DELETE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.DELETED
-          break
+          break;
         case 'FOLDER_REVOKE':
           headerPayload[tags.COMMAND] = commands.FOLDER_REVOKE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
@@ -276,17 +271,17 @@ module.exports = (function () {
           headerPayload[tags.COMMAND] = commands.FOLDER_RESTORE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.ACTIVE
-          break
+          break;
         case 'FOLDER_DELETE':
           headerPayload[tags.COMMAND] = commands.FOLDER_DELETE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.DELETED
-          break
+          break;
         case 'STACK_RENAME':
         case 'STACK_UPLOAD_REVISION':
           headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
-          break
+          break;
         case 'STACK_MOVE':
           headerPayload[tags.COMMAND] = commands.STACK_MOVE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
@@ -294,13 +289,13 @@ module.exports = (function () {
         case 'FOLDER_RENAME':
           headerPayload[tags.COMMAND] = commands.FOLDER_UPDATE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
-          break
+          break;
         case 'FOLDER_MOVE':
           headerPayload[tags.COMMAND] = commands.FOLDER_MOVE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
-          break
+          break;
         default:
-          throw new Error('Unknown action ref: ' + actionRef)
+          throw new Error('Unknown action ref: ' + actionRef);
       }
 
       // build the transaction header
@@ -327,7 +322,7 @@ module.exports = (function () {
         "type": "contract-interaction",
         "id": txId,
         "pstTransfer": JSON.stringify(pstTransfer)
-      })
+      });
       this.setTransactionId(txId);
       return response;
     }
@@ -368,6 +363,12 @@ module.exports = (function () {
             }
             case 'keyRotate': {
               encryptedBody.keys = [await this.keysEncrypter.encryptMemberKey(payload[fieldName])];
+              break
+            }
+            case 'publicSigningKey': {
+              encryptedBody.encPublicSigningKey = await this.dataEncrypter.encryptRaw(
+                payload[fieldName]
+              )
               break
             }
             default:

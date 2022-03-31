@@ -49,8 +49,12 @@ async function walletImportHandler(argv) {
     "mnemonic": wallet.backupPhrase
   }));
   const address = await wallet.getAddress();
+  const publicKey = wallet.publicKey();
+  const signingPublicKey = wallet.signingPublicKey();
   console.log("Your wallet was imported & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
+  console.log("Your wallet public key: " + publicKey);
+  console.log("Your wallet signing public key: " + signingPublicKey);
   process.exit(0);
 }
 
@@ -62,8 +66,12 @@ async function walletGenerateHandler() {
     "mnemonic": wallet.backupPhrase
   }));
   const address = await wallet.getAddress();
+  const publicKey = wallet.publicKey();
+  const signingPublicKey = wallet.signingPublicKey();
   console.log("Your wallet was generated & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
+  console.log("Your wallet public key: " + publicKey);
+  console.log("Your wallet signing public key: " + signingPublicKey);
   console.log("The seed phrase to recover the wallet: " + mnemonic);
   console.log("Please keep it somewhere safe.");
   process.exit(0);

@@ -14,6 +14,7 @@ exports.tags = {
   ACTION_REF: "Action-Ref",
   GROUP_REF: "Group-Ref",
   SIGNER_ADDRESS: "Signer-Address",
+  SIGNATURE: "Signature",
   MEMBER_ADDRESS: "Member-Address"
 };
 
