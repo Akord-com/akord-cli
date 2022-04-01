@@ -1,5 +1,6 @@
 const { codeSources } = require("./config");
 const { tags: protocolTags } = require("./constants");
+const { prepareArweaveTransaction, uploadChunksArweaveTransaction } = require("./arweave-helpers");
 const { postContractTransaction, initContract } = require("./helpers");
 const { verifyString, deriveAddress } = require("./crypto/crypto-helpers");
 const contractSrcPostfix = "-Contract-Src";
@@ -52,7 +53,19 @@ async function postTransaction(contractId, input, tags) {
   );
 }
 
+async function uploadFile(file) {
+  const wallet = loadWallet();
+  const transaction = await prepareArweaveTransaction(
+    file,
+    { 'Content-Type': 'image/jpeg' },
+    wallet
+  );
+  await uploadChunksArweaveTransaction(transaction);
+  return transaction.id;
+}
+
 module.exports = {
   initContractId,
-  postTransaction
+  postTransaction,
+  uploadFile
 }

@@ -1,6 +1,5 @@
 const { getContract, getEncryptedBackupPhraseFromCognito } = require('./helpers');
 const fs = require('fs');
-const { prepareArweaveTransaction, uploadChunksArweaveTransaction } = require("./arweave-helpers");
 var path = require("path");
 const {
   askForFilePath,
@@ -119,13 +118,11 @@ async function loadWallet() {
   let wallet = {};
   try {
     const config = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
-    const mnemonic = config.mnemonic;
-    const jwk = config.jwk
-    if (mnemonic) {
-      wallet = new MnemonicWallet(mnemonic, jwk);
+    if (config.mnemonic) {
+      wallet = new MnemonicWallet(config.mnemonic, config.jwk);
       wallet.deriveKeys();
     } else {
-      wallet = new WalletFactory("ARWEAVE", jwk).walletInstance();
+      wallet = new WalletFactory("ARWEAVE", config).walletInstance();
     }
     return wallet;
   } catch (error) {
@@ -155,37 +152,22 @@ async function vaultRestoreHandler(argv) {
 }
 
 async function stackCreateHandler(argv) {
-  const wallet = await loadWallet();
   const vaultId = argv.vaultId;
-
-  const { accessType } = await askForAccessType();
-
-  let file = {};
-  if (accessType === 'public') {
-    const { uploadType } = await askForUploadType();
-    if (uploadType === 'transaction id') {
-      const { transactionId } = await askForTransactionId();
-      file.resourceTx = transactionId;
-    }
-  } else {
-    const { filePath } = await askForFilePath();
-    file = getFileFromPath(filePath);
-    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, wallet.wallet);
-    await uploadChunksArweaveTransaction(transaction);
-    file.resourceTx = transaction.id;
-  }
-
+  const file = await _getFile();
   const { name } = await askForStackName();
 
   await objectCreate(vaultId, "STACK_CREATE", {}, { name: name ? name : file.name, file: file });
 }
 
 async function stackUploadRevisionHandler(argv) {
-  const wallet = await loadWallet();
   const stackId = argv.stackId;
+  const file = await _getFile();
 
+  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file: file });
+}
+
+async function _getFile() {
   const { accessType } = await askForAccessType();
-
   let file = {};
   if (accessType === 'public') {
     const { uploadType } = await askForUploadType();
@@ -196,11 +178,8 @@ async function stackUploadRevisionHandler(argv) {
   } else {
     const { filePath } = await askForFilePath();
     file = getFileFromPath(filePath);
-    const transaction = await prepareArweaveTransaction(file.data, { 'Content-Type': 'image/jpeg' }, wallet.wallet);
-    await uploadChunksArweaveTransaction(transaction);
-    file.resourceTx = transaction.id;
   }
-  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file: file });
+  return file;
 }
 
 async function stackRenameHandler(argv) {
@@ -285,7 +264,7 @@ async function folderDeleteHandler(argv) {
 function getFileFromPath(filePath) {
   let file = {};
   if (!fs.existsSync(filePath)) {
-    console.error(`Could not find a file in your filesystem`);
+    console.error("Could not find a file in your filesystem");
     process.exit(0);
   }
   const stats = fs.statSync(filePath);

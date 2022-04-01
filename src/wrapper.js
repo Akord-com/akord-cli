@@ -1,6 +1,6 @@
 const cryptoHelper = require("./crypto/crypto-helpers");
 const { getContract, constructHeader } = require("./helpers");
-const { initContractId, postTransaction } = require("./bundler");
+const { initContractId, postTransaction, uploadFile } = require("./bundler");
 const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
 const { tags, objectTypes, commands, status } = require('./constants');
@@ -344,6 +344,11 @@ module.exports = (function () {
             }
             case 'file': {
               const file = payload[fieldName];
+              if (!file.resourceTx) {
+                const encryptedFile = await this.dataEncrypter.encryptRaw(file.data);
+                const fileId = await uploadFile(encryptedFile);
+                file.resourceTx = fileId;
+              }
               const encryptedName = await this.dataEncrypter.encryptString(file.name);
               encryptedBody.files = [
                 {
