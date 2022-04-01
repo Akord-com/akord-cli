@@ -1,24 +1,24 @@
 const { codeSources } = require("./config");
-const { tags:protocolTags } = require("./constants");
+const { tags: protocolTags } = require("./constants");
 const { postContractTransaction, initContract } = require("./helpers");
 const { verifyString, deriveAddress } = require("./crypto/crypto-helpers");
 const contractSrcPostfix = "-Contract-Src";
 const fs = require('fs');
 const { base64ToArray } = require("./crypto/encoding-helpers");
+const os = require('os');
 
-function loadWallet(type) {
-  let path;
-  if (type === "bundler") {
-    path = './arweave-keyfile1.json';
+function loadWallet() {
+  const userWallet = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
+  if (userWallet.mnemonic) {
+    const wallet = fs.readFileSync("./arweave-keyfile1.json").toString();
+    return JSON.parse(wallet);
   } else {
-    path = '~/.akord';
+    return userWallet;
   }
-  const wallet = fs.readFileSync(path).toString();
-  return JSON.parse(wallet);
 }
 
 function initContractId(objectType, tags) {
-  const wallet = loadWallet("bundler");
+  const wallet = loadWallet();
   return initContract(codeSources[objectType + contractSrcPostfix], tags, wallet);
 }
 
@@ -41,7 +41,7 @@ async function validateSignature(input, tags) {
 }
 
 async function postTransaction(contractId, input, tags) {
-  const wallet = loadWallet("bundler");
+  const wallet = loadWallet();
   await validateSignature(input, tags);
   tags[protocolTags.SIGNATURE] = input.signature;
   return postContractTransaction(

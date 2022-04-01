@@ -3,7 +3,7 @@ const { getContract, constructHeader } = require("./helpers");
 const { initContractId, postTransaction } = require("./bundler");
 const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
-const { tags, objectTypes, role, commands, status } = require('./constants');
+const { tags, objectTypes, commands, status } = require('./constants');
 const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encrypter");
 
 module.exports = (function () {
@@ -88,7 +88,7 @@ module.exports = (function () {
           const contract = getContract(contractTxId, this.wallet.wallet);
           this.setVaultContract(contract);
           headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
-          bodyPayload.publicSigningKey = this.wallet.signingPublicKeyRaw();
+          bodyPayload.publicSigningKey = await this.wallet.signingPublicKeyRaw();
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContractId(objectTypes.MEMBERSHIP, {
@@ -101,7 +101,8 @@ module.exports = (function () {
             "objectType": objectTypes.MEMBERSHIP,
             "id": membershipContractTxId,
           })
-          this.setRawKeysEncryptionPublicKey(this.wallet.publicKeyRaw());
+          const userPublicKey = await this.wallet.publicKeyRaw();
+          this.setRawKeysEncryptionPublicKey(userPublicKey);
           this.setRawDataEncryptionPublicKey(publicKey);
 
           const memberContract = getContract(membershipContractTxId, this.wallet.wallet);
@@ -384,8 +385,7 @@ module.exports = (function () {
       const publicKey = await this.wallet.signingPublicKey();
       const encodedHeader = jsonToBase64(header);
       const encodedBody = jsonToBase64(body);
-      const signature = await cryptoHelper.signString(`${encodedHeader}${encodedBody}`, this.wallet.signingPrivateKeyRaw());
-      // const signature = await this.wallet.sign(`${encodedHeader}${encodedBody}`);
+      const signature = await this.wallet.sign(`${encodedHeader}${encodedBody}`);
       return { header: encodedHeader, body: encodedBody, publicKey, signature };
     }
 

@@ -17,24 +17,8 @@ module.exports = (function () {
     }
 
     async encrypt(stringToEncrypt) {
-      const string = arrayToBase64(stringToEncrypt);
-      const array = new Uint8Array(256);
-      const keyBuf = crypto.getRandomValues(array);
-      const encryptedData = await arweave.crypto.encrypt(stringToArray(string), keyBuf);
-      const address = await arweave.wallets.jwkToAddress(
-        this.walletType === "JWK"
-          ? this.wallet
-          : "use-wallet"
-      );
-      const publicKey = await getPublicKeyFromAddress(address);
-      const publicKeyJWK = await cryptoHelper.importRSAPublicKey(publicKey);
-      const encryptedKey = await crypto.subtle.encrypt(
-        { name: 'RSA-OAEP' },
-        publicKeyJWK,
-        keyBuf
-      );
-      const buffer = arweave.utils.concatBuffers([encryptedKey, encryptedData]);
-      return arrayToBase64(buffer);
+      const publicKey = await this.publicKeyRaw();
+      return this.encryptToPublicKey(stringToEncrypt, publicKey);
     }
 
     async encryptToPublicKey(stringToEncrypt, publicKey) {
@@ -74,6 +58,24 @@ module.exports = (function () {
       return base64ToArray(arweave.utils.bufferToString(res).split()[0]);
     }
 
+    signingPublicKey() {
+      return this.wallet.n;
+    }
+
+    publicKey() {
+      return this.wallet.n;
+    }
+
+    async publicKeyRaw() {
+      const publicKey = this.publicKey();
+      return cryptoHelper.importRSAPublicKey(publicKey);
+    }
+
+    async signingPublicKeyRaw() {
+      const publicKey = this.signingPublicKey();
+      return cryptoHelper.importRSAPublicKey(publicKey);
+    }
+
     async sign(dataArray) {
       const signatureOptions = {
         name: "RSA-PSS",
@@ -90,7 +92,6 @@ module.exports = (function () {
           dataArray, signatureOptions);
       }
       const signature = arweave.utils.bufferTob64(rawSignature);
-      // const signature = arrayToBase64(Uint8Array.from(Object.values(rawSignature)));
       return signature;
     }
 
@@ -98,11 +99,7 @@ module.exports = (function () {
       if (this.walletType === "JWK") {
         return this.wallet.n
       } else {
-        const address = await arweave.wallets.jwkToAddress(
-          this.walletType === "JWK"
-            ? this.wallet
-            : "use-wallet"
-        );
+        const address = await arweave.wallets.jwkToAddress();
         const publicKey = await getPublicKeyFromAddress(address);
         return publicKey;
       }
@@ -115,21 +112,6 @@ module.exports = (function () {
           : "use-wallet"
       );
       return address;
-    }
-
-    async publicKeyRaw() {
-      let publicKey;
-      if (this.walletType === "JWK") {
-        publicKey = this.wallet.n
-      } else {
-        const address = await arweave.wallets.jwkToAddress(
-          this.walletType === "JWK"
-            ? this.wallet
-            : "use-wallet"
-        );
-        publicKey = await getPublicKeyFromAddress(address);
-      }
-      return cryptoHelper.importRSAPublicKey(publicKey);
     }
 
     async getPublicKeyFromAddress(address) {

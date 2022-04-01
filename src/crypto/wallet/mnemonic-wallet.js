@@ -1,4 +1,3 @@
-const { arweave, getPublicKeyFromAddress } = require('../../arweave-helpers');
 const cryptoHelper = require('../crypto-helpers');
 const { arrayToBase64, base64ToArray, arrayToString, base64ToJson } = require('../encoding-helpers');
 const mnemonicKeys = require('arweave-mnemonic-keys');
@@ -15,7 +14,6 @@ module.exports = (function () {
       this.backupPhrase = mnemonic
       this.keyPair = {}
       this.signingKeyPair = {}
-      this.walletType = "JWK"
       this.wallet = jwk
     }
 
@@ -219,37 +217,8 @@ module.exports = (function () {
       return cryptoHelper.encryptRawWithPublicKey(publicKey, input)
     }
 
-    async sign(dataArray) {
-      const signatureOptions = {
-        name: "RSA-PSS",
-        saltLength: 32,
-      }
-      let rawSignature;
-      if (this.walletType === "JWK") {
-        rawSignature = await arweave.crypto.sign(
-          this.wallet,
-          dataArray
-        );
-      } else {
-        rawSignature = await this.wallet.signature(
-          dataArray, signatureOptions);
-      }
-      const signature = arweave.utils.bufferTob64(rawSignature);
-      return signature;
-    }
-
-    async getPublicKey() {
-      if (this.walletType === "JWK") {
-        return this.wallet.n
-      } else {
-        const address = await arweave.wallets.jwkToAddress(
-          this.walletType === "JWK"
-            ? this.wallet
-            : "use-wallet"
-        );
-        const publicKey = await getPublicKeyFromAddress(address);
-        return publicKey;
-      }
+    async sign(string) {
+      return await cryptoHelper.signString(string, this.signingPrivateKeyRaw());
     }
 
     async getAddress() {
