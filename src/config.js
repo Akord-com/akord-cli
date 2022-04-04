@@ -24,3 +24,4 @@ exports.codeSources = {
   "Folder-Contract-Src": "-ktyFcnlaGKyA4bZ4Lnbdt8yhhYnCAJVSpvUv0yuQ7I"
 }
 exports.pstContractTxId = "w_PFMgshjCl2ruSSqZfDyxCbJXlMpxZJJhaceptLeVw";
+exports.adminContractTxId = "xxx";

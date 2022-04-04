@@ -1,6 +1,6 @@
 const cryptoHelper = require("./crypto/crypto-helpers");
-const { getContract, constructHeader } = require("./helpers");
-const { initContractId, postTransaction, uploadFile } = require("./bundler");
+const { constructHeader } = require("./helpers");
+const { initContractId, postTransaction, uploadFile, getContractState } = require("./api-mock");
 const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
 const { tags, objectTypes, commands, status } = require('./constants');
@@ -8,10 +8,10 @@ const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encryp
 
 module.exports = (function () {
   class Wrapper {
-    constructor(wallet, encryptionKeys, vaultContract, membershipContract) {
+    constructor(wallet, encryptionKeys, vaultContractId, membershipContractId) {
       this.wallet = wallet
-      this.vaultContract = vaultContract
-      this.membershipContract = membershipContract
+      this.vaultContractId = vaultContractId
+      this.membershipContractId = membershipContractId
       // for the data encryption
       this.dataEncrypter = new EncrypterFactory(
         this.wallet,
@@ -40,12 +40,12 @@ module.exports = (function () {
       this.keysEncrypter.setRawPublicKey(publicKey)
     }
 
-    setVaultContract(vaultContract) {
-      this.vaultContract = vaultContract
+    setVaultContractId(vaultContractId) {
+      this.vaultContractId = vaultContractId
     }
 
-    setMembershipContract(membershipContract) {
-      this.membershipContract = membershipContract
+    setMembershipContractId(membershipContractId) {
+      this.membershipContractId = membershipContractId
     }
 
     setContractId(contractId) {
@@ -65,7 +65,7 @@ module.exports = (function () {
         transactions: []
       };
 
-      if (this.membershipContract) {
+      if (this.membershipContractId) {
         await this.dataEncrypter._decryptKeys();
         this.setRawDataEncryptionPublicKey(this.dataEncrypter.decryptedKeys[this.dataEncrypter.decryptedKeys.length - 1].publicKey);
       }
@@ -85,10 +85,9 @@ module.exports = (function () {
             publicKey: publicKey,
             privateKey: privateKey
           }
-          const contract = getContract(contractTxId, this.wallet.wallet);
-          this.setVaultContract(contract);
+          this.setVaultContractId(contractTxId);
           headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
-          bodyPayload.publicSigningKey = await this.wallet.signingPublicKeyRaw();
+          bodyPayload.publicSigningKey = await this.wallet.signingPublicKey();
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContractId(objectTypes.MEMBERSHIP, {
@@ -105,18 +104,17 @@ module.exports = (function () {
           this.setRawKeysEncryptionPublicKey(userPublicKey);
           this.setRawDataEncryptionPublicKey(publicKey);
 
-          const memberContract = getContract(membershipContractTxId, this.wallet.wallet);
-          this.setMembershipContract(memberContract);
+          this.setMembershipContractId(membershipContractTxId);
           this.setContractId(contractTxId);
           headerPayload[tags.MEMBER_ADDRESS] = address;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
           break;
         }
         case 'VAULT_RENAME':
-          this.setContractId(this.vaultContract.txId());
+          this.setContractId(this.vaultContractId);
           headerPayload[tags.COMMAND] = commands.VAULT_UPDATE
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = this.vaultContract.txId();
+          headerPayload[tags.OBJECT_CONTRACT_ID] = this.contractId;
           break
         case 'MEMBERSHIP_INVITE': {
           bodyPayload.memberKeys = [];
@@ -126,7 +124,7 @@ module.exports = (function () {
           const membershipContractTxId = await initContractId(
             objectTypes.MEMBERSHIP,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
               [tags.MEMBER_ADDRESS]: bodyPayload.address
             });
@@ -154,11 +152,10 @@ module.exports = (function () {
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair();
           headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REVOKE;
           headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          const vaultState = await this.getLatestVaultState();
+          const vaultState = await getContractState(this.vaultContractId);
           bodyPayload.keys = [];
           for (let member of vaultState.memberships) {
-            const memberContract = getContract(member, this.wallet.wallet);
-            const memberState = await memberContract.readState();
+            const memberState = await getContractState(member);
             if (member !== headerPayload[tags.OBJECT_CONTRACT_ID]
               && (memberState.state.status === status.ACCEPTED || memberState.state.status === status.PENDING)) {
               const memberPublicKey = await this.wallet.getPublicKeyFromAddress(memberState.state.address);
@@ -186,7 +183,7 @@ module.exports = (function () {
           const stackContractTxId = await initContractId(
             objectTypes.STACK,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
             });
           headerPayload[tags.OBJECT_CONTRACT_ID] = stackContractTxId;
@@ -208,7 +205,7 @@ module.exports = (function () {
           const folderContractTxId = await initContractId(
             objectTypes.FOLDER,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
             });
           response.transactions.push({
@@ -225,7 +222,7 @@ module.exports = (function () {
           const memoContractTxId = await initContractId(
             objectTypes.MEMO,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContract.txId(),
+              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
               [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
             });
           headerPayload[tags.OBJECT_CONTRACT_ID] = memoContractTxId;
@@ -302,8 +299,8 @@ module.exports = (function () {
       // build the transaction header
       const address = await this.wallet.getAddress();
       headerPayload[tags.SIGNER_ADDRESS] = address;
-      headerPayload[tags.VAULT_CONTRACT_ID] = this.vaultContract.txId();
-      headerPayload[tags.MEMBERSHIP_CONTRACT_ID] = this.membershipContract.txId();
+      headerPayload[tags.VAULT_CONTRACT_ID] = this.vaultContractId;
+      headerPayload[tags.MEMBERSHIP_CONTRACT_ID] = this.membershipContractId;
       const fullHeader = constructHeader(headerPayload);
 
       // build & encrypt the transaction body
@@ -316,8 +313,8 @@ module.exports = (function () {
         fullHeader
       );
       response.objectId = headerPayload[tags.OBJECT_CONTRACT_ID];
-      response.vaultId = this.vaultContract.txId();
-      response.membershipId = this.membershipContract.txId();
+      response.vaultId = this.vaultContractId;
+      response.membershipId = this.membershipContractId;
       response.type = headerPayload[tags.OBJECT_CONTRACT_TYPE];
       response.transactions.push({
         "type": "contract-interaction",
@@ -392,16 +389,6 @@ module.exports = (function () {
       const encodedBody = jsonToBase64(body);
       const signature = await this.wallet.sign(`${encodedHeader}${encodedBody}`);
       return { header: encodedHeader, body: encodedBody, publicKey, signature };
-    }
-
-    async getLatestVaultState() {
-      const latestVaultState = await this.vaultContract.readState();
-      return latestVaultState.state;
-    }
-
-    async getLatestMembershipState() {
-      const latestMembershipState = await this.membershipContract.readState();
-      return latestMembershipState.state;
     }
   }
   return Wrapper;

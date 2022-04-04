@@ -1,4 +1,4 @@
-const { getContract, getEncryptedBackupPhraseFromCognito } = require('./helpers');
+const { getEncryptedBackupPhraseFromCognito, getContractState } = require('./api-mock');
 const fs = require('fs');
 var path = require("path");
 const {
@@ -71,7 +71,7 @@ async function walletGenerateHandler() {
   console.log("Your wallet address: " + address);
   console.log("Your wallet public key: " + publicKey);
   console.log("Your wallet signing public key: " + signingPublicKey);
-  console.log("The seed phrase to recover the wallet: " + mnemonic);
+  console.log("The seed phrase to recover the wallet: " + wallet.backupPhrase);
   console.log("Please keep it somewhere safe.");
   process.exit(0);
 };
@@ -105,11 +105,11 @@ async function objectReadHandler(argv) {
   const wallet = await loadWallet();
   const objectId = argv.objectId;
 
-  const { objectState, vaultContract, membershipContract, membershipState } = await validateObjectContext(objectId, wallet);
+  const { objectState, membershipState } = await validateObjectContext(objectId, wallet);
 
   const encryptionKeys = fromMembershipContract(membershipState);
-  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
-  const decryptedState = await wrapper.dataEncrypter.decryptState(objectState.state);
+  const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
+  const decryptedState = await wrapper.dataEncrypter.decryptState(objectState);
   console.log(decryptedState);
   process.exit(0);
 }
@@ -302,11 +302,9 @@ async function membershipRevokeHandler(argv) {
 
 async function membershipUpdate(membershipId, actionRef, header, body) {
   const wallet = await loadWallet();
-  const membershipContract = getContract(membershipId, wallet);
-  const membershipState = await membershipContract.readState();
-  const vaultContract = getContract(membershipState.state.vaultId, wallet.wallet);
+  const membershipState = await getContractState(membershipId);
   const encryptionKeys = fromMembershipContract(membershipState.state);
-  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.state.vaultId, membershipId);
   const response = await wrapper.dispatch(actionRef, header, body);
   console.log(response);
   process.exit(0);
@@ -314,9 +312,9 @@ async function membershipUpdate(membershipId, actionRef, header, body) {
 
 async function objectUpdate(objectId, actionRef, header, body) {
   const wallet = await loadWallet();
-  const { vaultContract, membershipContract, membershipState } = await validateObjectContext(objectId, wallet);
+  const { membershipState } = await validateObjectContext(objectId, wallet);
   const encryptionKeys = fromMembershipContract(membershipState);
-  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
   const response = await wrapper.dispatch(actionRef, header, body);
   console.log(response);
   process.exit(0);
@@ -324,24 +322,22 @@ async function objectUpdate(objectId, actionRef, header, body) {
 
 async function objectCreate(vaultId, actionRef, header, body) {
   const wallet = await loadWallet();
-  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(vaultId, wallet);
+  const { membershipState } = await validateVaultContext(vaultId, wallet);
   const encryptionKeys = fromMembershipContract(membershipState);
-  const wrapper = new Wrapper(wallet, encryptionKeys, vaultContract, membershipContract);
+  const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
   const response = await wrapper.dispatch(actionRef, header, body);
   console.log(response);
   process.exit(0);
 }
 
 async function validateVaultContext(vaultId, wallet) {
-  const vaultContract = getContract(vaultId, wallet.wallet);
-  const vaultState = await vaultContract.readState();
+  const vaultState = await getContractState(vaultId);
   const address = await wallet.getAddress();
   if (vaultState && vaultState.state && vaultState.state.memberships) {
     for (let membershipId of vaultState.state.memberships) {
-      const membershipContract = getContract(membershipId, wallet.wallet);
-      const memberState = await membershipContract.readState();
-      if (memberState.state.address === address) {
-        return { membershipState: memberState.state, vaultContract, membershipContract };
+      const membershipState = await getContractState(membershipId);
+      if (membershipState.state.address === address) {
+        return { membershipState: membershipState.state };
       }
     }
   }
@@ -350,9 +346,9 @@ async function validateVaultContext(vaultId, wallet) {
 }
 
 async function validateObjectContext(objectId, wallet) {
-  const objectState = await getContract(objectId, wallet.wallet).readState();
-  const { vaultContract, membershipContract, membershipState } = await validateVaultContext(objectState.state.vaultId || objectState.state.id, wallet);
-  return { objectState, vaultContract, membershipContract, membershipState }
+  const objectState = await getContractState(objectId);
+  const { membershipState } = await validateVaultContext(objectState.state.vaultId || objectState.state.id, wallet);
+  return { objectState: objectState.state, membershipState }
 }
 
 module.exports = {

@@ -6,7 +6,7 @@ const constants = require('../constants');
 const hdkey = require('hdkey');
 const _sodium = require('libsodium-wrappers');
 const nacl = require('tweetnacl')
-const users = require("../../users.json");
+const { getPublicKeyFromAddress } = require("../../api-mock");
 
 module.exports = (function () {
   class MnemonicWallet {
@@ -226,12 +226,7 @@ module.exports = (function () {
     }
 
     async getPublicKeyFromAddress(address) {
-      // TODO: call Akord API here
-      let publicKey;
-      Object.keys(users).map(function (key, index) {
-        if (key === address) publicKey = users[key].publicKey
-      });
-      return base64ToArray(publicKey);
+      return getPublicKeyFromAddress(address);
     }
   }
 

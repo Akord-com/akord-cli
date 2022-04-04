@@ -2,56 +2,10 @@ const { SmartWeaveNodeFactory, LoggerFactory } = require("redstone-smartweave");
 const { arweave } = require("./arweave-helpers");
 const { tags } = require('./constants');
 const { protocolName, protocolVersion, appName, pstContractTxId } = require('./config');
-const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 
 // Set up SmartWeave client
 LoggerFactory.INST.logLevel('error');
 const smartweave = SmartWeaveNodeFactory.memCached(arweave)
-
-const getEncryptedBackupPhraseFromCognito = async (email, password) => {
-  const authenticationData = {
-    Username: email,
-    Password: password,
-  };
-  const authenticationDetails = new AmazonCognitoIdentity.AuthenticationDetails(authenticationData);
-  const poolData = {
-    UserPoolId: 'eu-central-1_FOAlZvgHo',
-    ClientId: '3m7t2tk3dpldemk3geq0otrtt9'
-  };
-  const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
-  const userData = {
-    Username: email,
-    Pool: userPool
-  };
-  const cognitoUser = new AmazonCognitoIdentity.CognitoUser(userData);
-  return new Promise((resolve, reject) => {
-    cognitoUser.authenticateUser(authenticationDetails, {
-      onSuccess: function (result) {
-        // const accessToken = result.getAccessToken().getJwtToken();
-        cognitoUser.getUserAttributes(async function (err, result) {
-          if (err) {
-            console.log(err.message || JSON.stringify(err));
-            return reject;
-          }
-          const attributes = result.reduce(function (
-            attributesObject,
-            attribute
-          ) {
-            attributesObject[attribute.Name] = attribute.Value;
-            return attributesObject;
-          }, {});
-          resolve(attributes["custom:encBackupPhrase"]);
-        });
-      },
-      onFailure: function (err) {
-        console.log(err);
-        return reject;
-      },
-
-    })
-  }
-  );
-};
 
 const getContract = (contractTxId, wallet) => {
   return smartweave
@@ -148,9 +102,9 @@ async function postContractTransaction(contractId, input, tags, wallet) {
   }
 }
 
-const initContract = async (contractSrc, additionalTags, wallet) => {
+const initContract = async (contractSrc, additionalTags, initialState, wallet) => {
   const tags = getTagsFromObject(constructHeader(additionalTags));
-  const contractTxId = await deployContract(contractSrc, {}, tags, wallet);
+  const contractTxId = await deployContract(contractSrc, initialState, tags, wallet);
   return contractTxId;
 }
 
@@ -170,6 +124,5 @@ module.exports = {
   postContractTransaction,
   getTagsFromObject,
   initContract,
-  constructHeader,
-  getEncryptedBackupPhraseFromCognito
+  constructHeader
 }
