@@ -10,10 +10,12 @@ const os = require('os');
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 const users = require('./users.json');
 
+const adminAddress = "uDUlT10M9Krtz7CHdr9c9_ePKp5IP0vwH60pauzsyDY";
+
 function loadWallet() {
   const userWallet = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
   if (userWallet.mnemonic) {
-    const wallet = fs.readFileSync("./arweave-keyfile1.json").toString();
+    const wallet = fs.readFileSync("./admin-mock-keyfile.json").toString();
     return JSON.parse(wallet);
   } else {
     return userWallet;
