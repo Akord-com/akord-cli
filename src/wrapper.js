@@ -3,7 +3,7 @@ const { constructHeader } = require("./helpers");
 const { initContractId, postTransaction, uploadFile, getContractState } = require("./api-mock");
 const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
-const { tags, objectTypes, commands, status } = require('./constants');
+const { protocolTags, objectTypes, commands, status } = require('./constants');
 const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encrypter");
 
 module.exports = (function () {
@@ -80,20 +80,20 @@ module.exports = (function () {
             "objectType": objectTypes.VAULT,
             "id": contractTxId,
           })
-          headerPayload[tags.COMMAND] = commands.VAULT_CREATE;
+          headerPayload[protocolTags.COMMAND] = commands.VAULT_CREATE;
           bodyPayload.keyRotate = {
             publicKey: publicKey,
             privateKey: privateKey
           }
           this.setVaultContractId(contractTxId);
-          headerPayload[tags.OBJECT_CONTRACT_ID] = contractTxId;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = contractTxId;
           bodyPayload.publicSigningKey = await this.wallet.signingPublicKey();
 
           const address = await this.wallet.getAddress();
           const membershipContractTxId = await initContractId(objectTypes.MEMBERSHIP, {
-            [tags.VAULT_CONTRACT_ID]: contractTxId,
-            [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
-            [tags.MEMBER_ADDRESS]: address
+            [protocolTags.VAULT_CONTRACT_ID]: contractTxId,
+            [protocolTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
+            [protocolTags.MEMBER_ADDRESS]: address
           });
           response.transactions.push({
             "type": "contract-creation",
@@ -106,27 +106,27 @@ module.exports = (function () {
 
           this.setMembershipContractId(membershipContractTxId);
           this.setContractId(contractTxId);
-          headerPayload[tags.MEMBER_ADDRESS] = address;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
+          headerPayload[protocolTags.MEMBER_ADDRESS] = address;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT
           break;
         }
         case 'VAULT_RENAME':
           this.setContractId(this.vaultContractId);
-          headerPayload[tags.COMMAND] = commands.VAULT_UPDATE
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = this.contractId;
+          headerPayload[protocolTags.COMMAND] = commands.VAULT_UPDATE
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = this.contractId;
           break
         case 'MEMBERSHIP_INVITE': {
           bodyPayload.memberKeys = [];
           const publicKey = await this.wallet.getPublicKeyFromAddress(bodyPayload.address);
           this.setRawKeysEncryptionPublicKey(publicKey);
-          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_INVITE
+          headerPayload[protocolTags.COMMAND] = commands.MEMBERSHIP_INVITE
           const membershipContractTxId = await initContractId(
             objectTypes.MEMBERSHIP,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
-              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
-              [tags.MEMBER_ADDRESS]: bodyPayload.address
+              [protocolTags.VAULT_CONTRACT_ID]: this.vaultContractId,
+              [protocolTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMBERSHIP,
+              [protocolTags.MEMBER_ADDRESS]: bodyPayload.address
             });
           response.transactions.push({
             "type": "contract-creation",
@@ -134,29 +134,29 @@ module.exports = (function () {
             "id": membershipContractTxId,
           })
           this.setContractId(membershipContractTxId);
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
-          headerPayload[tags.OBJECT_CONTRACT_ID] = membershipContractTxId;
-          headerPayload[tags.MEMBER_ADDRESS] = bodyPayload.address;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = membershipContractTxId;
+          headerPayload[protocolTags.MEMBER_ADDRESS] = bodyPayload.address;
           break;
         }
         case 'MEMBERSHIP_ACCEPT':
-          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[protocolTags.COMMAND] = commands.MEMBERSHIP_ACCEPT;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           bodyPayload.publicSigningKey = this.wallet.signingPublicKeyRaw();
           break;
         case 'MEMBERSHIP_REJECT':
-          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REJECT;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[protocolTags.COMMAND] = commands.MEMBERSHIP_REJECT;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           break;
         case 'MEMBERSHIP_REVOKE': {
           const { privateKey, publicKey } = await cryptoHelper.generateKeyPair();
-          headerPayload[tags.COMMAND] = commands.MEMBERSHIP_REVOKE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
+          headerPayload[protocolTags.COMMAND] = commands.MEMBERSHIP_REVOKE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMBERSHIP;
           const vaultState = await getContractState(this.vaultContractId);
           bodyPayload.keys = [];
           for (let member of vaultState.memberships) {
             const memberState = await getContractState(member);
-            if (member !== headerPayload[tags.OBJECT_CONTRACT_ID]
+            if (member !== headerPayload[protocolTags.OBJECT_CONTRACT_ID]
               && (memberState.state.status === status.ACCEPTED || memberState.state.status === status.PENDING)) {
               const memberPublicKey = await this.wallet.getPublicKeyFromAddress(memberState.state.address);
               const memberKeysEncrypter = new KeysStructureEncrypter(
@@ -183,114 +183,114 @@ module.exports = (function () {
           const stackContractTxId = await initContractId(
             objectTypes.STACK,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
-              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
+              [protocolTags.VAULT_CONTRACT_ID]: this.vaultContractId,
+              [protocolTags.OBJECT_CONTRACT_TYPE]: objectTypes.STACK
             });
-          headerPayload[tags.OBJECT_CONTRACT_ID] = stackContractTxId;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = stackContractTxId;
           this.setContractId(stackContractTxId);
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.STACK,
             "id": stackContractTxId,
           })
-          headerPayload[tags.COMMAND] = commands.STACK_CREATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_CREATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.name = bodyPayload.file.name;
           break;
         case 'STACK_RENAME':
-          headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_UPDATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break;
         case 'FOLDER_CREATE':
           const folderContractTxId = await initContractId(
             objectTypes.FOLDER,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
-              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
+              [protocolTags.VAULT_CONTRACT_ID]: this.vaultContractId,
+              [protocolTags.OBJECT_CONTRACT_TYPE]: objectTypes.FOLDER
             });
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.FOLDER,
             "id": folderContractTxId,
           })
-          headerPayload[tags.OBJECT_CONTRACT_ID] = folderContractTxId;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = folderContractTxId;
           this.setContractId(folderContractTxId);
-          headerPayload[tags.COMMAND] = commands.FOLDER_CREATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_CREATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break;
         case 'MEMO_CREATE':
           const memoContractTxId = await initContractId(
             objectTypes.MEMO,
             {
-              [tags.VAULT_CONTRACT_ID]: this.vaultContractId,
-              [tags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
+              [protocolTags.VAULT_CONTRACT_ID]: this.vaultContractId,
+              [protocolTags.OBJECT_CONTRACT_TYPE]: objectTypes.MEMO
             });
-          headerPayload[tags.OBJECT_CONTRACT_ID] = memoContractTxId;
+          headerPayload[protocolTags.OBJECT_CONTRACT_ID] = memoContractTxId;
           this.setContractId(memoContractTxId);
           response.transactions.push({
             "type": "contract-creation",
             "objectType": objectTypes.MEMO,
             "id": memoContractTxId,
           })
-          headerPayload[tags.COMMAND] = commands.MEMO_CREATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
+          headerPayload[protocolTags.COMMAND] = commands.MEMO_CREATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.MEMO;
           break;
         case 'VAULT_ARCHIVE':
-          headerPayload[tags.COMMAND] = commands.VAULT_ARCHIVE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[protocolTags.COMMAND] = commands.VAULT_ARCHIVE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break;
         case 'VAULT_RESTORE':
-          headerPayload[tags.COMMAND] = commands.VAULT_RESTORE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
+          headerPayload[protocolTags.COMMAND] = commands.VAULT_RESTORE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.VAULT;
           bodyPayload.status = status.ARCHIVED
           break;
         case 'STACK_REVOKE':
-          headerPayload[tags.COMMAND] = commands.STACK_REVOKE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_REVOKE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.REVOKED
           break;
         case 'STACK_REVOKE':
-          headerPayload[tags.COMMAND] = commands.STACK_RESTORE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_RESTORE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.ACTIVE
           break;
         case 'STACK_DELETE':
-          headerPayload[tags.COMMAND] = commands.STACK_DELETE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_DELETE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           bodyPayload.status = status.DELETED
           break;
         case 'FOLDER_REVOKE':
-          headerPayload[tags.COMMAND] = commands.FOLDER_REVOKE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_REVOKE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.REVOKED
           break
         case 'FOLDER_RESTORE':
-          headerPayload[tags.COMMAND] = commands.FOLDER_RESTORE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_RESTORE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.ACTIVE
           break;
         case 'FOLDER_DELETE':
-          headerPayload[tags.COMMAND] = commands.FOLDER_DELETE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_DELETE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           bodyPayload.status = status.DELETED
           break;
         case 'STACK_RENAME':
         case 'STACK_UPLOAD_REVISION':
-          headerPayload[tags.COMMAND] = commands.STACK_UPDATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_UPDATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break;
         case 'STACK_MOVE':
-          headerPayload[tags.COMMAND] = commands.STACK_MOVE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
+          headerPayload[protocolTags.COMMAND] = commands.STACK_MOVE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.STACK;
           break
         case 'FOLDER_RENAME':
-          headerPayload[tags.COMMAND] = commands.FOLDER_UPDATE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_UPDATE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break;
         case 'FOLDER_MOVE':
-          headerPayload[tags.COMMAND] = commands.FOLDER_MOVE;
-          headerPayload[tags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
+          headerPayload[protocolTags.COMMAND] = commands.FOLDER_MOVE;
+          headerPayload[protocolTags.OBJECT_CONTRACT_TYPE] = objectTypes.FOLDER;
           break;
         default:
           throw new Error('Unknown action ref: ' + actionRef);
@@ -298,9 +298,9 @@ module.exports = (function () {
 
       // build the transaction header
       const address = await this.wallet.getAddress();
-      headerPayload[tags.SIGNER_ADDRESS] = address;
-      headerPayload[tags.VAULT_CONTRACT_ID] = this.vaultContractId;
-      headerPayload[tags.MEMBERSHIP_CONTRACT_ID] = this.membershipContractId;
+      headerPayload[protocolTags.SIGNER_ADDRESS] = address;
+      headerPayload[protocolTags.VAULT_CONTRACT_ID] = this.vaultContractId;
+      headerPayload[protocolTags.MEMBERSHIP_CONTRACT_ID] = this.membershipContractId;
       const fullHeader = constructHeader(headerPayload);
 
       // build & encrypt the transaction body
@@ -308,14 +308,14 @@ module.exports = (function () {
 
       const txInput = await this.signTransaction(fullHeader, encryptedBody);
       const { txId, pstTransfer } = await postTransaction(
-        headerPayload[tags.OBJECT_CONTRACT_ID],
+        headerPayload[protocolTags.OBJECT_CONTRACT_ID],
         { function: "write", ...txInput },
         fullHeader
       );
-      response.objectId = headerPayload[tags.OBJECT_CONTRACT_ID];
+      response.objectId = headerPayload[protocolTags.OBJECT_CONTRACT_ID];
       response.vaultId = this.vaultContractId;
       response.membershipId = this.membershipContractId;
-      response.type = headerPayload[tags.OBJECT_CONTRACT_TYPE];
+      response.type = headerPayload[protocolTags.OBJECT_CONTRACT_TYPE];
       response.transactions.push({
         "type": "contract-interaction",
         "id": txId,

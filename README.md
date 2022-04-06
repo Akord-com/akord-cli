@@ -45,7 +45,7 @@ akord stack:create <vaultId>
 Let's now rename the vault & read the current vault state from the weave
 ```
 akord vault:rename <vaultId> "family memories"
-akord object:read <vaultId>
+akord read <vaultId>
 ```
 
 ## Akord CLI Commands
@@ -59,12 +59,13 @@ akord object:read <vaultId>
 akord <command>
 
 Commands:
-  akord wallet:configure <key-file>         configure the wallet with the JSON
-                                            keyfile
+  akord configure <env>                     configure the CLI
+  akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
+  akord wallet:cognito <email> <password>   import the mnemonic from cognito
   akord wallet:generate                     generate a new wallet & configure
                                             the CLI
-  akord wallet:import <mnemonic>            import the wallet from the mnemonic
-
+  akord wallet:import <key-file>            configure the wallet with the JSON
+                                            keyfile
   akord vault:create <name> [terms]         create a new vault
   akord vault:rename <vaultId> <name>       update vault name
   akord vault:archive <vaultId>             archive the vault
@@ -97,7 +98,7 @@ Commands:
                                             or leave the vault
   akord membership:revoke <membershipId>    revoke the membership
 
-  akord object:read <objectId>              compute & decrypt the current object
+  akord read <objectId>                     compute & decrypt the current object
                                             state
 
 Options:

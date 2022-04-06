@@ -1,6 +1,6 @@
 const { SmartWeaveNodeFactory, LoggerFactory } = require("redstone-smartweave");
 const { arweave } = require("./arweave-helpers");
-const { tags } = require('./constants');
+const { protocolTags } = require("./constants");
 const { protocolName, protocolVersion, appName, pstContractTxId } = require('./config');
 
 // Set up SmartWeave client
@@ -12,7 +12,6 @@ const getContract = (contractTxId, wallet) => {
     .contract(contractTxId)
     .setEvaluationOptions({
       internalWrites: true,
-      fcpOptimization: true,
       stackTrace: {
         saveState: true
       }
@@ -111,10 +110,10 @@ const initContract = async (contractSrc, additionalTags, initialState, wallet) =
 function constructHeader(headerPayload) {
   return {
     ...(headerPayload ? headerPayload : {}),
-    [tags.CLIENT_NAME]: appName,
-    [tags.PROTOCOL_NAME]: protocolName,
-    [tags.PROTOCOL_VERSION]: protocolVersion,
-    [tags.TIMESTAMP]: Date.now(),
+    [protocolTags.CLIENT_NAME]: appName,
+    [protocolTags.PROTOCOL_NAME]: protocolName,
+    [protocolTags.PROTOCOL_VERSION]: protocolVersion,
+    [protocolTags.TIMESTAMP]: Date.now(),
   }
 }
 

@@ -28,10 +28,11 @@ const {
   membershipAcceptHandler,
   membershipRejectHandler,
   objectReadHandler,
-  walletConfigureHandler,
+  walletCognitoHandler,
   walletGenerateHandler,
   walletImportHandler,
-  walletRecoverHandler
+  walletRecoverHandler,
+  configureHandler
 } = require('./handlers');
 
 clear();
@@ -39,14 +40,14 @@ console.log(
   figlet.textSync('Akord', { horizontalLayout: 'full' })
 );
 
-const walletConfigureCommand = {
-  command: 'wallet:configure <key-file>',
-  describe: 'configure the wallet with the JSON keyfile',
+const configureCommand = {
+  command: 'configure <env>',
+  describe: 'configure the CLI',
   builder: () => {
     yargs
-      .positional('key-file', { describe: 'path to the JSON wallet key file' })
+      .positional('env', { describe: 'choose the environment', choices: ['mainnet', 'testnet', 'local'] })
   },
-  handler: walletConfigureHandler,
+  handler: configureHandler,
 };
 
 const walletGenerateCommand = {
@@ -59,14 +60,24 @@ const walletGenerateCommand = {
 };
 
 const walletImportCommand = {
-  command: 'wallet:import <email> <password>',
+  command: 'wallet:import <key-file>',
+  describe: 'configure the wallet with the JSON keyfile',
+  builder: () => {
+    yargs
+      .positional('key-file', { describe: 'path to the JSON wallet key file' })
+  },
+  handler: walletImportHandler,
+};
+
+const walletCognitoCommand = {
+  command: 'wallet:cognito <email> <password>',
   describe: 'import the mnemonic from cognito',
   builder: () => {
     yargs
     .positional('email', { describe: 'email' })
     .positional('password', { describe: 'password' })
   },
-  handler: walletImportHandler,
+  handler: walletCognitoHandler,
 };
 
 const walletRecoverCommand = {
@@ -313,7 +324,7 @@ const membershipRevokeCommand = {
 };
 
 const objectReadCommand = {
-  command: 'object:read <objectId>',
+  command: 'read <objectId>',
   describe: 'compute & decrypt the current object state',
   builder: () => {
     yargs
@@ -323,8 +334,9 @@ const objectReadCommand = {
 };
 
 yargs
+  .command(configureCommand)
   .command(walletRecoverCommand)
-  .command(walletConfigureCommand)
+  .command(walletCognitoCommand)
   .command(walletGenerateCommand)
   .command(walletImportCommand)
   .command(vaultCreateCommand)

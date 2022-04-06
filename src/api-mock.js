@@ -1,5 +1,5 @@
-const { codeSources, adminContractTxId } = require("./config");
-const { tags: protocolTags } = require("./constants");
+const { codeSources, admin } = require("./config");
+const { protocolTags } = require("./constants");
 const { prepareArweaveTransaction, uploadChunksArweaveTransaction } = require("./arweave-helpers");
 const { postContractTransaction, initContract, getContract } = require("./helpers");
 const { verifyString, deriveAddress } = require("./crypto/crypto-helpers");
@@ -9,8 +9,6 @@ const { base64ToArray } = require("./crypto/encoding-helpers");
 const os = require('os');
 const AmazonCognitoIdentity = require('amazon-cognito-identity-js');
 const users = require('./users.json');
-
-const adminAddress = "uDUlT10M9Krtz7CHdr9c9_ePKp5IP0vwH60pauzsyDY";
 
 function loadWallet() {
   const userWallet = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
@@ -28,9 +26,9 @@ function isAdmin() {
   return false;
 }
 
-function initContractId(objectType, tags) {
+async function initContractId(objectType, tags) {
   const wallet = loadWallet();
-  const initialState = isAdmin() ? { adminContract: adminContractTxId } : {};
+  const initialState = isAdmin() ? { admin: admin } : {};
   return initContract(codeSources[objectType + contractSrcPostfix], tags, initialState, wallet);
 }
 

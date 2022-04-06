@@ -2,7 +2,7 @@ const Arweave = require('arweave');
 const { apiConfig } = require('./api-config');
 
 // Set up Arweave client
-const arweave = Arweave.init(apiConfig);
+const arweave = Arweave.init(apiConfig());
 
 async function prepareArweaveTransaction(data, tags, wallet) {
   try {

@@ -1,4 +1,4 @@
-exports.tags = {
+exports.protocolTags = {
   CLIENT_NAME: "Client-Name",
   PROTOCOL_NAME: "Protocol-Name",
   PROTOCOL_VERSION: "Protocol-Version",

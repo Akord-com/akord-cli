@@ -25,7 +25,13 @@ function storeWallet(walletData) {
   }
 }
 
-async function walletConfigureHandler(argv) {
+async function configureHandler(argv) {
+  const env = argv.env;
+  fs.writeFileSync(os.homedir() + "/.akord-cli-config", env);
+  console.log("The CLI was configured to use the " + env + " network.");
+}
+
+async function walletImportHandler(argv) {
   const keyFile = argv.keyFile;
   try {
     const stringKey = fs.readFileSync(keyFile).toString();
@@ -36,7 +42,7 @@ async function walletConfigureHandler(argv) {
   }
 }
 
-async function walletImportHandler(argv) {
+async function walletCognitoHandler(argv) {
   const email = argv.email;
   const password = argv.password;
 
@@ -375,8 +381,9 @@ module.exports = {
   membershipAcceptHandler,
   membershipRejectHandler,
   objectReadHandler,
-  walletConfigureHandler,
+  walletCognitoHandler,
   walletGenerateHandler,
   walletImportHandler,
-  walletRecoverHandler
+  walletRecoverHandler,
+  configureHandler,
 }
