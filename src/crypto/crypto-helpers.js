@@ -144,17 +144,12 @@ async function verifyHash(msgHash, publicKey, signature) {
 }
 
 async function deriveAddress(publicKey, prefix) {
-  const sha256Digest = nodeCrypto
-    .createHash("sha256")
-    .update(publicKey, "hex")
-    .digest("hex");
-
-  const ripemd160Digest = nodeCrypto
-    .createHash("ripemd160")
-    .update(sha256Digest, "hex")
-    .digest("hex");
-
-  const bech32Words = bech32.toWords(Buffer.from(ripemd160Digest, "hex"));
+  // TODO: more research on the address derivation
+  const sha256Digest = await crypto.subtle.digest(
+    HASH_ALGORITHM,
+    publicKey,
+  );
+  const bech32Words = bech32.toWords(Buffer.from(sha256Digest, "hex"));
   const words = new Uint8Array([0, ...bech32Words]);
   const address = bech32.encode(prefix, words);
   return address;

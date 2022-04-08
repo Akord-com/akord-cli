@@ -3,7 +3,7 @@ const { arrayToBase64, base64ToArray, arrayToString, base64ToJson } = require('.
 const mnemonicKeys = require('arweave-mnemonic-keys');
 const bip39 = require('bip39');
 const constants = require('../constants');
-const hdkey = require('hdkey');
+const { HDKey } = require('ethereum-cryptography/hdkey');
 const _sodium = require('libsodium-wrappers');
 const nacl = require('tweetnacl')
 const { getPublicKeyFromAddress } = require("../../api-mock");
@@ -59,17 +59,17 @@ module.exports = (function () {
      * - derives the master seed from the backup phrase
      * - derives the root node from the master seed
      * @param {string} backupPhrase
-     * @returns {Promise.<hdkey>} Promise of hdkey object with HD wallet root node
+     * @returns {Promise.<HDKey>} Promise of hdkey object with HD wallet root node
      */
     async getRoot() {
       const seed = await bip39.mnemonicToSeed(this.backupPhrase)
-      return hdkey.fromMasterSeed(seed)
+      return HDKey.fromMasterSeed(seed)
     }
 
     /**
      * Node derivation from backup phrase and given path
      * @param {string} path
-     * @returns {Promise.<hdkey>} Promise of hdkey object with HD wallet node
+     * @returns {Promise.<HDKey>} Promise of hdkey object with HD wallet node
      */
     async getNodeFromPath(path) {
       const root = await this.getRoot(this.backupPhrase)
@@ -106,13 +106,13 @@ module.exports = (function () {
       await _sodium.ready
       const sodium = _sodium
       if (path === constants.HD_ENCRYPTION_PATH) {
-        const encryptionKeyPair = nacl.box.keyPair.fromSecretKey(node._privateKey)
+        const encryptionKeyPair = nacl.box.keyPair.fromSecretKey(node.privateKey)
         return {
           publicKey: arrayToBase64(encryptionKeyPair.publicKey),
           privateKey: arrayToBase64(encryptionKeyPair.secretKey)
         }
       }
-      const signingKeyPair = sodium.crypto_sign_seed_keypair(node._privateKey)
+      const signingKeyPair = sodium.crypto_sign_seed_keypair(node.privateKey)
       return {
         publicKey: arrayToBase64(signingKeyPair.publicKey),
         privateKey: arrayToBase64(signingKeyPair.privateKey)
@@ -131,8 +131,8 @@ module.exports = (function () {
       const signingNode = await this.getNodeFromPath(constants.HD_SIGNING_PATH)
       await _sodium.ready
       const sodium = _sodium
-      const encryptionKeyPair = nacl.box.keyPair.fromSecretKey(node._privateKey)
-      const signingKeyPair = sodium.crypto_sign_seed_keypair(signingNode._privateKey)
+      const encryptionKeyPair = nacl.box.keyPair.fromSecretKey(node.privateKey)
+      const signingKeyPair = sodium.crypto_sign_seed_keypair(signingNode.privateKey)
       this.keyPair.privateKey = encryptionKeyPair.secretKey
       this.keyPair.publicKey = encryptionKeyPair.publicKey
       this.signingKeyPair.privateKey = signingKeyPair.privateKey
