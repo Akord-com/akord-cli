@@ -5,6 +5,7 @@ const { jsonToBase64 } = require('./crypto/encoding-helpers');
 const EncrypterFactory = require('./crypto/encrypter/encrypter-factory');
 const { protocolTags, objectTypes, commands, status } = require('./constants');
 const KeysStructureEncrypter = require("./crypto/encrypter/keys-structure-encrypter");
+const mime = require('mime-types');
 
 module.exports = (function () {
   class Wrapper {
@@ -342,8 +343,21 @@ module.exports = (function () {
             case 'file': {
               const file = payload[fieldName];
               if (!file.resourceTx) {
-                const encryptedFile = await this.dataEncrypter.encryptRaw(file.data);
-                const fileId = await uploadFile(encryptedFile);
+                let fileToUpload = {};
+                let tags = {};
+                if (file.public) {
+                  fileToUpload = file.data;
+                  const mimeType = mime.lookup(file.name);
+                  const hash = await cryptoHelper.digestRaw(file.data);
+                  tags['Content-Type'] = mimeType;
+                  tags['File-Hash'] = hash;
+                  tags['File-Name'] = file.name;
+                } else {
+                  fileToUpload = await this.dataEncrypter.encryptRaw(file.data);
+                }
+                tags['File-Size'] = file.size;
+                tags['Timestamp'] = Date.now();
+                const fileId = await uploadFile(fileToUpload, tags);
                 file.resourceTx = fileId;
               }
               const encryptedName = await this.dataEncrypter.encryptString(file.name);

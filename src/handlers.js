@@ -4,7 +4,6 @@ var path = require("path");
 const {
   askForFilePath,
   askForTransactionId,
-  askForAccessType,
   askForStackName,
   askForUploadType,
   askForRole
@@ -102,7 +101,7 @@ async function vaultCreateHandler(argv) {
   const termsOfAccess = argv.termsOfAccess;
 
   const wrapper = new Wrapper(wallet);
-  const response = await wrapper.dispatch("VAULT_CREATE", {}, { name: name, termsOfAccess: termsOfAccess });
+  const response = await wrapper.dispatch("VAULT_CREATE", {}, { name, termsOfAccess });
   console.log(response);
   process.exit(0);
 }
@@ -142,7 +141,7 @@ async function vaultRenameHandler(argv) {
   const vaultId = argv.vaultId;
   const name = argv.name;
 
-  await objectUpdate(vaultId, "VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name: name });
+  await objectUpdate(vaultId, "VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name });
 }
 
 async function vaultArchiveHandler(argv) {
@@ -159,30 +158,39 @@ async function vaultRestoreHandler(argv) {
 
 async function stackCreateHandler(argv) {
   const vaultId = argv.vaultId;
-  const file = await _getFile();
-  const { name } = await askForStackName();
+  const file = await _getFile(argv);
+  const name = argv.name || file.name || (await askForStackName().name);
 
-  await objectCreate(vaultId, "STACK_CREATE", {}, { name: name ? name : file.name, file: file });
+  await objectCreate(vaultId, "STACK_CREATE", {}, { name, file });
 }
 
 async function stackUploadRevisionHandler(argv) {
   const stackId = argv.stackId;
   const file = await _getFile();
 
-  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file: file });
+  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file });
 }
 
-async function _getFile() {
-  const { accessType } = await askForAccessType();
+async function _getFile(argv) {
   let file = {};
-  if (accessType === 'public') {
-    const { uploadType } = await askForUploadType();
-    if (uploadType === 'transaction id') {
-      const { transactionId } = await askForTransactionId();
-      file.resourceTx = transactionId;
+  if (argv.public) {
+    if (argv.filePath) {
+      file = getFileFromPath(argv.filePath);
+    } else if (argv.transactionId) {
+      file.resourceTx = argv.transactionId;
+    } else {
+      const { uploadType } = await askForUploadType();
+      if (uploadType === 'transaction id') {
+        const { transactionId } = await askForTransactionId();
+        file.resourceTx = transactionId;
+      } else {
+        const { filePath } = await askForFilePath();
+        file = getFileFromPath(filePath);
+      }
     }
+    file.public = true
   } else {
-    const { filePath } = await askForFilePath();
+    const filePath = argv.filePath || (await askForFilePath()).filePath;
     file = getFileFromPath(filePath);
   }
   return file;
@@ -224,7 +232,7 @@ async function memoCreateHandler(argv) {
   const vaultId = argv.vaultId;
   const message = argv.message;
 
-  await objectCreate(vaultId, "MEMO_CREATE", {}, { message: message });
+  await objectCreate(vaultId, "MEMO_CREATE", {}, { message });
 }
 
 async function folderCreateHandler(argv) {
@@ -232,14 +240,14 @@ async function folderCreateHandler(argv) {
   const name = argv.name;
   const parentFolderId = argv.parentFolderId;
 
-  await objectCreate(vaultId, "FOLDER_CREATE", {}, { name: name, folderId: parentFolderId });
+  await objectCreate(vaultId, "FOLDER_CREATE", {}, { name, folderId: parentFolderId });
 }
 
 async function folderRenameHandler(argv) {
   const folderId = argv.folderId;
   const name = argv.name;
 
-  await objectUpdate(folderId, "FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name: name });
+  await objectUpdate(folderId, "FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name });
 }
 
 async function folderMoveHandler(argv) {
@@ -270,7 +278,7 @@ async function folderDeleteHandler(argv) {
 function getFileFromPath(filePath) {
   let file = {};
   if (!fs.existsSync(filePath)) {
-    console.error("Could not find a file in your filesystem");
+    console.error("Could not find a file in your filesystem: " + filePath);
     process.exit(0);
   }
   const stats = fs.statSync(filePath);
@@ -284,9 +292,9 @@ async function membershipInviteHandler(argv) {
   const vaultId = argv.vaultId;
   const address = argv.address;
 
-  const { role } = await askForRole();
+  const role = argv.role || (await askForRole()).role;
 
-  await objectCreate(vaultId, "MEMBERSHIP_INVITE", {}, { address: address, role: role });
+  await objectCreate(vaultId, "MEMBERSHIP_INVITE", {}, { address, role });
 }
 
 async function membershipAcceptHandler(argv) {
@@ -337,15 +345,21 @@ async function objectCreate(vaultId, actionRef, header, body) {
 }
 
 async function validateVaultContext(vaultId, wallet) {
-  const vaultState = await getContractState(vaultId);
-  const address = await wallet.getAddress();
-  if (vaultState && vaultState.state && vaultState.state.memberships) {
-    for (let membershipId of vaultState.state.memberships) {
-      const membershipState = await getContractState(membershipId);
-      if (membershipState.state.address === address) {
-        return { membershipState: membershipState.state };
+  try {
+    const vaultState = await getContractState(vaultId);
+    const address = await wallet.getAddress();
+    if (vaultState && vaultState.state && vaultState.state.memberships) {
+      for (let membershipId of vaultState.state.memberships) {
+        const membershipState = await getContractState(membershipId);
+        if (membershipState.state.address === address) {
+          return { membershipState: membershipState.state };
+        }
       }
     }
+  } catch (error) {
+    console.error("Unable to validate vault context: " + vaultId);
+    console.error(error);
+    process.exit(0);
   }
   console.error("Unable to validate vault context: " + vaultId);
   process.exit(0);

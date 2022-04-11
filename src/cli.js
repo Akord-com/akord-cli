@@ -74,8 +74,8 @@ const walletCognitoCommand = {
   describe: 'import the mnemonic from cognito',
   builder: () => {
     yargs
-    .positional('email', { describe: 'email' })
-    .positional('password', { describe: 'password' })
+      .positional('email', { describe: 'email' })
+      .positional('password', { describe: 'password' })
   },
   handler: walletCognitoHandler,
 };
@@ -138,9 +138,19 @@ const stackCreateCommand = {
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+      .option("transaction-id", {
+        alias: "transaction-id",
+        describe: "id of the transaction with the file data"
+      })
       .option('public', { type: 'boolean', default: false })
-      .positional('transactionId', { describe: 'id of the transaction with the file data' })
-      .positional('filePath', { describe: 'id of the transaction with the file data' })
+      .option("n", {
+        alias: "name",
+        describe: "name for the new stack, default to the file name"
+      })
   },
   handler: stackCreateHandler,
 };
@@ -162,6 +172,15 @@ const stackUploadRevisionCommand = {
   builder: () => {
     yargs
       .positional('stackId', { describe: 'stack id' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+      .option("transaction-id", {
+        alias: "transaction-id",
+        describe: "id of the transaction with the file data"
+      })
+      .option('public', { type: 'boolean', default: false })
   },
   handler: stackUploadRevisionHandler,
 };
@@ -289,6 +308,11 @@ const membershipInviteCommand = {
     yargs
       .positional('vaultId', { describe: 'vault id' })
       .positional('address', { describe: 'invitee address' })
+      .option("r", {
+        alias: "role",
+        describe: "the role for the new member.",
+        choices: ['CONTRIBUTOR', 'VIEWER']
+      });
   },
   handler: membershipInviteHandler,
 };

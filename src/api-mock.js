@@ -64,11 +64,11 @@ async function postTransaction(contractId, input, tags) {
   );
 }
 
-async function uploadFile(file) {
+async function uploadFile(file, tags) {
   const wallet = loadWallet();
   const transaction = await prepareArweaveTransaction(
     file,
-    { 'Content-Type': 'image/jpeg' },
+    tags,
     wallet
   );
   await uploadChunksArweaveTransaction(transaction);

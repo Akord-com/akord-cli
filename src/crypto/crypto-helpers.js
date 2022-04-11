@@ -103,9 +103,13 @@ async function signHash(msgHash, privateKey) {
  * @returns {Promise.<string>} payload digest as base64 string
  */
 async function digest(payload) {
+  return digestRaw(stringToArray(payload))
+}
+
+async function digestRaw(payload) {
   const msgHash = await crypto.subtle.digest(
     HASH_ALGORITHM,
-    stringToArray(payload),
+    payload,
   )
   return arrayToBase64(msgHash)
 }
@@ -578,6 +582,7 @@ module.exports = {
   importKeyFromBase64,
   importKeyFromSeed,
   digest,
+  digestRaw,
   signHash,
   signString,
   verifyHash,

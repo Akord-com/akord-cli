@@ -20,28 +20,13 @@ const askForTransactionId = async () => {
   ]);
 };
 
-const askForAccessType = async () => {
-  return inquirer
-    .prompt([
-      {
-        type: 'list',
-        name: 'accessType',
-        message: 'Choose who can access your file:',
-        choices: [
-          'public', 'private',
-        ],
-        default: 'private'
-      },
-    ]);
-};
-
 const askForStackName = async (name) => {
   return inquirer.prompt([
     {
-      name: 'stackName',
+      name: 'name',
       type: 'input',
       message: `Type stack name:`,
-      default: name,
+      default: name
     },
   ]);
 };
@@ -79,7 +64,6 @@ const askForRole = async () => {
 module.exports = {
   askForFilePath,
   askForTransactionId,
-  askForAccessType,
   askForStackName,
   askForUploadType,
   askForRole

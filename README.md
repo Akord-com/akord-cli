@@ -40,7 +40,7 @@ example: https://testnet.redstone.tools/mint/uDUlT10M9Krtz7CHdr9c9_ePKp5IP0vwH60
 Once we've minted some tokens for our wallet, let's create our first vault and upload our first file by following these few simple steps:
 ```
 akord vault:create "my first vault"
-akord stack:create <vaultId>
+akord stack:create <vaultId> --file-path "./image.jpeg"
 ```
 Let's now rename the vault & read the current vault state from the weave
 ```
