@@ -83,7 +83,7 @@ async function getContractState(contractId) {
 
 async function getPublicKeyFromAddress(address) {
    let publicKey;
-   Object.keys(users).map(function (key, index) {
+   Object.keys(users).map(function (key) {
      if (key === address) publicKey = users[key].publicKey
    });
    return base64ToArray(publicKey);

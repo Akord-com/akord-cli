@@ -17,10 +17,8 @@ const {
   jsonToBase64,
   stringToArray
 } = require('./encoding-helpers');
-const { arweave, getPublicKeyFromAddress } = require('../arweave-helpers');
 const nodeCrypto = require('crypto');
 const crypto = nodeCrypto.webcrypto;
-const { bech32 } = require("bech32");
 
 /**
  * Export CryptoKey object to base64 encoded string
@@ -153,10 +151,7 @@ async function deriveAddress(publicKey, prefix) {
     HASH_ALGORITHM,
     publicKey,
   );
-  const bech32Words = bech32.toWords(Buffer.from(sha256Digest, "hex"));
-  const words = new Uint8Array([0, ...bech32Words]);
-  const address = bech32.encode(prefix, words);
-  return address;
+  return arrayToBase64(sha256Digest);
 }
 
 /**
@@ -334,43 +329,6 @@ async function encryptRawWithPublicKey(publicKey, plaintext) {
   } catch (error) {
     throw new Error("Sodium encryption error: " + error)
   }
-}
-
-async function encryptRawForArweavePublicKey(publicKey, plaintext) {
-  const string = arrayToBase64(plaintext);
-  const keyBuf = nodeCrypto.randomBytes(256);
-  const derivedKey = nodeCrypto.pbkdf2Sync(keyBuf, (salt = salt ? salt : "salt"), 100000, 32, "sha256");
-  const iv = nodeCrypto.randomBytes(16);
-  const cipher = nodeCrypto.createCipheriv("aes-256-cbc", derivedKey, iv);
-  const encryptedData = Buffer.concat([iv, cipher.update(new TextEncoder().encode(string)), cipher.final()]);
-  const encryptedKey = await crypto.subtle.encrypt(
-    { name: 'RSA-OAEP' },
-    publicKey,
-    keyBuf
-  );
-  const buffer = arweave.utils.concatBuffers([encryptedKey, encryptedData]);
-  return arrayToBase64(buffer);
-}
-
-async function encryptRawForAddress(address, plaintext) {
-  const publicKey = await getPublicKeyFromAddress(address);
-  const publicKeyJWK = await importRSAPublicKey(publicKey);
-  if (!publicKeyJWK) {
-    throw new Error("Could not find a public key corresponding to the given address.");
-  }
-  const string = arrayToBase64(plaintext);
-  const keyBuf = nodeCrypto.randomBytes(256);
-  const derivedKey = nodeCrypto.pbkdf2Sync(keyBuf, (salt = salt ? salt : "salt"), 100000, 32, "sha256");
-  const iv = nodeCrypto.randomBytes(16);
-  const cipher = nodeCrypto.createCipheriv("aes-256-cbc", derivedKey, iv);
-  const encryptedData = Buffer.concat([iv, cipher.update(new TextEncoder().encode(string)), cipher.final()]);
-  const encryptedKey = await crypto.subtle.encrypt(
-    { name: 'RSA-OAEP' },
-    publicKeyJWK,
-    keyBuf
-  );
-  const buffer = arweave.utils.concatBuffers([encryptedKey, encryptedData]);
-  return arrayToBase64(buffer);
 }
 
 const importRSAPublicKey = async (publicKey) => {
@@ -577,7 +535,6 @@ async function derivePasswords(password) {
 
 module.exports = {
   deriveAddress,
-  encryptRawForAddress,
   exportKeyToBase64,
   importKeyFromBase64,
   importKeyFromSeed,
@@ -602,6 +559,5 @@ module.exports = {
   decryptHybridString,
   derivePasswords,
   importRSAPublicKey,
-  importRSACryptoKey,
-  encryptRawForArweavePublicKey
+  importRSACryptoKey
 }
