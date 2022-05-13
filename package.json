@@ -2,9 +2,9 @@
   "name": "akord-cli",
   "version": "1.0.0",
   "description": "Akord Command Line Interface",
-  "main": "index.js",
+  "main": "index.ts",
   "bin": {
-    "akord": "./src/cli.js"
+    "akord": "./src/cli.ts"
   },
   "scripts": {
     "test": "jest --watchAll --verbose false --collectCoverage=false"
@@ -18,9 +18,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@akord/akord-js": "file:../akord-js",
+    "@akord/crypto": "file:../akord-crypto",
     "amazon-cognito-identity-js": "^5.2.8",
     "arweave": "1.10.18",
     "arweave-mnemonic-keys": "^0.0.9",
+    "aws-appsync": "^4.1.5",
     "axios": "^0.24.0",
     "chalk": "^5.0.0",
     "clear": "^0.1.0",
@@ -29,16 +32,25 @@
     "inquirer": "^8.2.0",
     "libsodium-wrappers": "^0.7.9",
     "mime-types": "^2.1.35",
-    "redstone-smartweave": "^0.4.59",
+    "redstone-smartweave": "0.4.75",
+    "tweetnacl": "^1.0.3",
     "yargs": "^17.3.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.12.3",
-    "@babel/node": "^7.12.6",
+    "@babel/core": "^7.17.10",
+    "@babel/node": "^7.17.10",
     "@babel/preset-env": "^7.12.1",
+    "@types/figlet": "^1.5.4",
+    "@types/jest": "^27.4.0",
+    "@types/libsodium-wrappers": "^0.7.9",
+    "@types/mime-types": "^2.1.1",
+    "@types/node": "^17.0.8",
     "arlocal": "1.1.12",
     "faker": "^5.1.0",
     "jest": "^27.3.1",
-    "nodemon": "^2.0.6"
+    "nodemon": "^2.0.6",
+    "ts-jest": "^27.1.2",
+    "ts-node": "^10.2.1",
+    "typescript": "4.1.3"
   }
 }

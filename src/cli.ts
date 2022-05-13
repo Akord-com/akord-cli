@@ -1,41 +1,12 @@
 #!/usr/bin/env node
-'use strict';
 
-const yargs = require('yargs');
-const clear = require('clear');
-const figlet = require('figlet');
-const {
-  vaultCreateHandler,
-  vaultRenameHandler,
-  vaultArchiveHandler,
-  vaultRestoreHandler,
-  stackCreateHandler,
-  stackRenameHandler,
-  stackRevokeHandler,
-  stackRestoreHandler,
-  stackUploadRevisionHandler,
-  stackMoveHandler,
-  stackDeleteHandler,
-  memoCreateHandler,
-  folderCreateHandler,
-  folderRenameHandler,
-  folderMoveHandler,
-  folderRevokeHandler,
-  folderRestoreHandler,
-  folderDeleteHandler,
-  membershipInviteHandler,
-  membershipRevokeHandler,
-  membershipAcceptHandler,
-  membershipRejectHandler,
-  objectReadHandler,
-  walletCognitoHandler,
-  walletGenerateHandler,
-  walletImportHandler,
-  walletRecoverHandler,
-  configureHandler
-} = require('./handlers');
+import yargs, { CommandModule } from 'yargs';
+import figlet from 'figlet';
+import {
+  vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
+  walletCognitoHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
+} from './handlers';
 
-clear();
 console.log(
   figlet.textSync('Akord', { horizontalLayout: 'full' })
 );
@@ -347,45 +318,45 @@ const membershipRevokeCommand = {
   handler: membershipRevokeHandler,
 };
 
-const objectReadCommand = {
-  command: 'read <objectId>',
-  describe: 'compute & decrypt the current object state',
-  builder: () => {
-    yargs
-      .positional('objectId', { describe: 'object id' })
-  },
-  handler: objectReadHandler,
-};
+// const objectReadCommand = {
+//   command: 'read <objectId>',
+//   describe: 'compute & decrypt the current object state',
+//   builder: () => {
+//     yargs
+//       .positional('objectId', { describe: 'object id' })
+//   },
+//   handler: objectReadHandler,
+// };
 
 yargs
-  .command(configureCommand)
-  .command(walletRecoverCommand)
-  .command(walletCognitoCommand)
-  .command(walletGenerateCommand)
-  .command(walletImportCommand)
-  .command(vaultCreateCommand)
-  .command(vaultRenameCommand)
-  .command(vaultArchiveCommand)
-  .command(vaultRestoreCommand)
-  .command(stackCreateCommand)
-  .command(stackRenameCommand)
-  .command(stackUploadRevisionCommand)
-  .command(stackMoveCommand)
-  .command(stackRevokeCommand)
-  .command(stackRestoreCommand)
-  .command(stackDeleteCommand)
-  .command(memoCreateCommand)
-  .command(folderCreateCommand)
-  .command(folderMoveCommand)
-  .command(folderRenameCommand)
-  .command(folderRevokeCommand)
-  .command(folderRestoreCommand)
-  .command(folderDeleteCommand)
-  .command(membershipInviteCommand)
-  .command(membershipAcceptCommand)
-  .command(membershipRejectCommand)
-  .command(membershipRevokeCommand)
-  .command(objectReadCommand)
+  .command(<CommandModule><unknown>configureCommand)
+  .command(<CommandModule><unknown>walletRecoverCommand)
+  .command(<CommandModule><unknown>walletCognitoCommand)
+  .command(<CommandModule><unknown>walletGenerateCommand)
+  .command(<CommandModule><unknown>walletImportCommand)
+  .command(<CommandModule><unknown>vaultCreateCommand)
+  .command(<CommandModule><unknown>vaultRenameCommand)
+  .command(<CommandModule><unknown>vaultArchiveCommand)
+  .command(<CommandModule><unknown>vaultRestoreCommand)
+  .command(<CommandModule><unknown>stackCreateCommand)
+  .command(<CommandModule><unknown>stackRenameCommand)
+  .command(<CommandModule><unknown>stackUploadRevisionCommand)
+  // .command(stackMoveCommand)
+  // .command(stackRevokeCommand)
+  // .command(stackRestoreCommand)
+  // .command(stackDeleteCommand)
+  // .command(memoCreateCommand)
+  // .command(folderCreateCommand)
+  // .command(folderMoveCommand)
+  // .command(folderRenameCommand)
+  // .command(folderRevokeCommand)
+  // .command(folderRestoreCommand)
+  // .command(folderDeleteCommand)
+  // .command(membershipInviteCommand)
+  // .command(membershipAcceptCommand)
+  // .command(membershipRejectCommand)
+  // .command(membershipRevokeCommand)
+  //.command(objectReadCommand)
   .demandCommand()
   .help()
   .argv;

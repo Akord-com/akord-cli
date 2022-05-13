@@ -1,4 +1,4 @@
-const inquirer = require('inquirer');
+import inquirer from 'inquirer';
 
 const askForFilePath = async () => {
   return inquirer.prompt([
@@ -61,7 +61,7 @@ const askForRole = async () => {
     ]);
 };
 
-module.exports = {
+export {
   askForFilePath,
   askForTransactionId,
   askForStackName,
