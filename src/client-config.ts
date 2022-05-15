@@ -1,4 +1,4 @@
-import { WalletType } from "@akord/crypto/crypto"
+import { WalletType } from "@akord/crypto"
 
 export interface ClientConfig {
   env?: EnvType,

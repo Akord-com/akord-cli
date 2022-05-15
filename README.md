@@ -10,7 +10,9 @@ For each protocol interaction, a reward is distributed to the randomly selected 
 ### Install the CLI
 locally
 ```
-npm install -g
+npm install
+npm run build
+npm run local
 ```
 from the published package
 ```
