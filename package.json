@@ -22,7 +22,7 @@
   "license": "ISC",
   "dependencies": {
     "@akord/akord-js": "file:../akord-js",
-    "@akord/crypto": "file:../akord-crypto",
+    "@akord/crypto": "^0.0.29",
     "amazon-cognito-identity-js": "^5.2.8",
     "arweave": "1.10.18",
     "arweave-mnemonic-keys": "^0.0.9",

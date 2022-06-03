@@ -64,8 +64,8 @@ async function walletCognitoHandler(argv) {
     "jwtToken": jwtToken
   }));
   const address = await wallet.getAddress();
-  const publicKey = wallet.publicKey();
-  const signingPublicKey = wallet.signingPublicKey();
+  const publicKey = await wallet.publicKey();
+  const signingPublicKey = await wallet.signingPublicKey();
   console.log("Your wallet was imported & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
   console.log("Your wallet public key: " + publicKey);
