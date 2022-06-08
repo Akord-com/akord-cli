@@ -20,7 +20,7 @@ const askForTransactionId = async () => {
   ]);
 };
 
-const askForStackName = async (name) => {
+const askForStackName = async (name: string): Promise<{ name: string }> => {
   return inquirer.prompt([
     {
       name: 'name',

@@ -93,17 +93,20 @@ async function walletGenerateHandler() {
 };
 
 async function walletRecoverHandler(argv) {
-  // const mnemonic = argv.mnemonic;
-  // console.log("Please be patient, recovering the wallet may take a while");
-  // const wallet = await MnemonicWallet.recover(mnemonic);
-  // storeWallet(JSON.stringify({
-  //   "jwk": wallet.wallet,
-  //   "mnemonic": wallet.backupPhrase
-  // }));
-  // const address = await wallet.getAddress();
-  // console.log("Your wallet was imported & stored successfully at: ~/.akord");
-  // console.log("Your wallet address: " + address);
-  // process.exit(0);
+  const mnemonic = argv.mnemonic;
+  console.log("Please be patient, recovering the wallet may take a while");
+  const wallet = await AkordWallet.importFromBackupPhrase(mnemonic);
+  storeWallet(JSON.stringify({
+    "mnemonic": wallet.backupPhrase
+  }));
+  const address = await wallet.getAddress();
+  const publicKey = await wallet.publicKey();
+  const signingPublicKey = await wallet.signingPublicKey();
+  console.log("Your wallet was imported & stored successfully at: ~/.akord");
+  console.log("Your wallet address: " + address);
+  console.log("Your wallet public key: " + publicKey);
+  console.log("Your wallet signing public key: " + signingPublicKey);
+  process.exit(0);
 };
 
 async function vaultCreateHandler(argv) {
@@ -116,19 +119,6 @@ async function vaultCreateHandler(argv) {
   console.log(response);
   process.exit(0);
 }
-
-// async function objectReadHandler(argv) {
-//   const { wallet, jwtToken } = await loadCredentials();
-//   const objectId = argv.objectId;
-
-//   const { objectState, membershipState } = await validateObjectContext(objectId, wallet);
-
-//   const encryptionKeys = fromMembershipContract(membershipState);
-//   const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
-//   const decryptedState = await wrapper.dataEncrypter.decryptState(objectState);
-//   console.log(decryptedState);
-//   process.exit(0);
-// }
 
 async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> {
   let wallet = {} as Wallet;
@@ -151,37 +141,58 @@ async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> 
 }
 
 async function vaultRenameHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const name = argv.name;
 
-  await objectUpdate(vaultId, "VAULT_RENAME", { "Object-Contract-Id": vaultId }, { name });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.vaultRename(vaultId, name);
+  console.log(response);
+  process.exit(0);
 }
 
 async function vaultArchiveHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  await objectUpdate(vaultId, "VAULT_ARCHIVE", { "Object-Contract-Id": vaultId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.vaultArchive(vaultId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function vaultRestoreHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  await objectUpdate(vaultId, "VAULT_RESTORE", { "Object-Contract-Id": vaultId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.vaultRestore(vaultId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackCreateHandler(argv) {
-  // const vaultId = argv.vaultId;
-  // const file = <any>(await _getFile(argv));
-  // const name = argv.name || file.name || (await askForStackName().name);
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId
+  const parentId = argv.parentId
+  const file = <any>(await _getFile(argv));
+  const name = argv.name || file.name || (await askForStackName(file.name)).name;
 
-  // await objectCreate(vaultId, "STACK_CREATE", {}, { name, file });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackCreate(vaultId, file, name, parentId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackUploadRevisionHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
   const file = await _getFile(argv);
 
-  await objectUpdate(stackId, "STACK_UPLOAD_REVISION", {}, { file });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackUploadRevision(stackId, file);
+  console.log(response);
+  process.exit(0);
 }
 
 async function _getFile(argv) {
@@ -210,82 +221,130 @@ async function _getFile(argv) {
 }
 
 async function stackRenameHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
   const name = argv.name;
 
-  await objectUpdate(stackId, "STACK_RENAME", { "Object-Contract-Id": stackId }, { name: name });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackRename(stackId, name);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackRevokeHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  await objectUpdate(stackId, "STACK_REVOKE", { "Object-Contract-Id": stackId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackRevoke(stackId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackRestoreHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  await objectUpdate(stackId, "STACK_RESTORE", { "Object-Contract-Id": stackId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackRestore(stackId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackDeleteHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  await objectUpdate(stackId, "STACK_DELETE", { "Object-Contract-Id": stackId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackDelete(stackId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function stackMoveHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
-  const parentFolderId = argv.parentFolderId;
+  const parentId = argv.parentId;
 
-  await objectUpdate(stackId, "STACK_MOVE", { "Object-Contract-Id": stackId }, { folderId: parentFolderId });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.stackMove(stackId, parentId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function memoCreateHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const message = argv.message;
 
-  await objectCreate(vaultId, "MEMO_CREATE", {}, { message });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.memoCreate(vaultId, message);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderCreateHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
+  const parentId = argv.parentId;
   const name = argv.name;
-  const parentFolderId = argv.parentFolderId;
 
-  await objectCreate(vaultId, "FOLDER_CREATE", {}, { name, folderId: parentFolderId });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderCreate(vaultId, name, parentId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderRenameHandler(argv) {
-  const folderId = argv.folderId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const folderId = argv.stackId;
   const name = argv.name;
 
-  await objectUpdate(folderId, "FOLDER_RENAME", { "Object-Contract-Id": folderId }, { name });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderRename(folderId, name);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderMoveHandler(argv) {
+  const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
-  const parentFolderId = argv.parentFolderId;
+  const parentId = argv.parentId;
 
-  await objectUpdate(folderId, "FOLDER_MOVE", { "Object-Contract-Id": folderId }, { folderId: parentFolderId });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderMove(folderId, parentId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderRevokeHandler(argv) {
-  const folderId = argv.folderId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const folderId = argv.stackId;
 
-  await objectUpdate(folderId, "FOLDER_REVOKE", { "Object-Contract-Id": folderId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderRevoke(folderId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderRestoreHandler(argv) {
-  const folderId = argv.folderId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const folderId = argv.stackId;
 
-  await objectUpdate(folderId, "FOLDER_RESTORE", { "Object-Contract-Id": folderId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderRestore(folderId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function folderDeleteHandler(argv) {
-  const folderId = argv.folderId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const folderId = argv.stackId;
 
-  await objectUpdate(folderId, "FOLDER_DELETE", { "Object-Contract-Id": folderId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.folderDelete(folderId);
+  console.log(response);
+  process.exit(0);
 }
 
 function getFileFromPath(filePath) {
@@ -302,86 +361,46 @@ function getFileFromPath(filePath) {
 }
 
 async function membershipInviteHandler(argv) {
-  // const vaultId = argv.vaultId;
-  // const address = argv.address;
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId;
+  const address = argv.address;
 
-  // const role = argv.role || (await askForRole()).role;
+  const role = argv.role || (await askForRole()).role;
 
-  // await objectCreate(vaultId, "MEMBERSHIP_INVITE", {}, { address, role });
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.membershipInvite(vaultId, address, role);
+  console.log(response);
+  process.exit(0);
 }
 
 async function membershipAcceptHandler(argv) {
-  // const membershipId = argv.membershipId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const membershipId = argv.membershipId;
 
-  // await membershipUpdate(membershipId, "MEMBERSHIP_ACCEPT", { "Object-Contract-Id": membershipId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.membershipAccept(membershipId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function membershipRejectHandler(argv) {
-  // const membershipId = argv.membershipId;
+  const { wallet, jwtToken } = await loadCredentials();
+  const membershipId = argv.membershipId;
 
-  // await membershipUpdate(membershipId, "MEMBERSHIP_REJECT", { "Object-Contract-Id": membershipId }, {});
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.membershipReject(membershipId);
+  console.log(response);
+  process.exit(0);
 }
 
 async function membershipRevokeHandler(argv) {
-  // const membershipId = argv.membershipId;
-  // await objectUpdate(membershipId, "MEMBERSHIP_REVOKE", { "Object-Contract-Id": membershipId }, {});
-}
+  const { wallet, jwtToken } = await loadCredentials();
+  const membershipId = argv.membershipId;
 
-async function membershipUpdate(membershipId, actionRef, header, body) {
-  // const wallet = await loadCredentials();
-  // const membershipState = await getContractState(membershipId);
-  // const encryptionKeys = fromMembershipContract(membershipState.state);
-  // const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.state.vaultId, membershipId);
-  // const response = await wrapper.dispatch(actionRef, header, body);
-  // console.log(response);
-  // process.exit(0);
-}
-
-async function objectUpdate(objectId, actionRef, header, body) {
-  // const wallet = await loadCredentials();
-  // const { membershipState } = await validateObjectContext(objectId, wallet);
-  // const encryptionKeys = fromMembershipContract(membershipState);
-  // const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
-  // const response = await wrapper.dispatch(actionRef, header, body);
-  // console.log(response);
-  // process.exit(0);
-}
-
-async function objectCreate(vaultId, actionRef, header, body) {
-  // const wallet = await loadCredentials();
-  // const { membershipState } = await validateVaultContext(vaultId, wallet);
-  // const encryptionKeys = fromMembershipContract(membershipState);
-  // const wrapper = new Wrapper(wallet, encryptionKeys, membershipState.vaultId, membershipState.id);
-  // const response = await wrapper.dispatch(actionRef, header, body);
-  // console.log(response);
-  // process.exit(0);
-}
-
-async function validateVaultContext(vaultId, wallet) {
-  // try {
-  //   const vaultState = await getContractState(vaultId);
-  //   const address = await wallet.getAddress();
-  //   if (vaultState && vaultState.state && vaultState.state.memberships) {
-  //     for (let membershipId of vaultState.state.memberships) {
-  //       const membershipState = await getContractState(membershipId);
-  //       if (membershipState.state.address === address) {
-  //         return { membershipState: membershipState.state };
-  //       }
-  //     }
-  //   }
-  // } catch (error) {
-  //   console.error("Unable to validate vault context: " + vaultId);
-  //   console.error(error);
-  //   process.exit(0);
-  // }
-  // console.error("Unable to validate vault context: " + vaultId);
-  // process.exit(0);
-}
-
-async function validateObjectContext(objectId, wallet) {
-  // const objectState = await getContractState(objectId);
-  // const { membershipState } = await validateVaultContext(objectState.state.vaultId || objectState.state.id, wallet);
-  // return { objectState: objectState.state, membershipState }
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.membershipRevoke(membershipId);
+  console.log(response);
+  process.exit(0);
 }
 
 export {
@@ -407,7 +426,6 @@ export {
   membershipRevokeHandler,
   membershipAcceptHandler,
   membershipRejectHandler,
-  // objectReadHandler,
   walletCognitoHandler,
   walletGenerateHandler,
   walletImportHandler,

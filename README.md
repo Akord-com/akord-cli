@@ -77,7 +77,7 @@ Commands:
   akord stack:rename <stackId> <name>       rename the stack
   akord stack:upload-revision <stackId>     upload new file version to the stack
   akord stack:move <stackId>                move the stack
-  <parentFolderId>
+  <parentId>
   akord stack:revoke <stackId>              revoke the stack
   akord stack:restore <stackId>             restore the stack
   akord stack:delete <stackId>              delete the stack
@@ -85,9 +85,9 @@ Commands:
   akord memo:create <vaultId> <message>     create a new memo
 
   akord folder:create <vaultId> <name>      create a new folder
-  [parentFolderId]
+  [parentId]
   akord folder:move <folderId>              move the folder
-  <parentFolderId>
+  <parentId>
   akord folder:rename <folderId> <name>     rename the folder
   akord folder:revoke <folderId>            revoke the folder
   akord folder:restore <folderId>           restore the folder

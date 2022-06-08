@@ -122,6 +122,10 @@ const stackCreateCommand = {
         alias: "name",
         describe: "name for the new stack, default to the file name"
       })
+      .option("p", {
+        alias: "parentId",
+        describe: "parent folder id, if null: root folder"
+      })
   },
   handler: stackCreateHandler,
 };
@@ -157,12 +161,12 @@ const stackUploadRevisionCommand = {
 };
 
 const stackMoveCommand = {
-  command: 'stack:move <stackId> <parentFolderId>',
+  command: 'stack:move <stackId> <parentId>',
   describe: 'move the stack',
   builder: () => {
     yargs
       .positional('stackId', { describe: 'stack id' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: stackMoveHandler,
 };
@@ -209,13 +213,13 @@ const memoCreateCommand = {
 };
 
 const folderCreateCommand = {
-  command: 'folder:create <vaultId> <name> [parentFolderId]',
+  command: 'folder:create <vaultId> <name> [parentId]',
   describe: 'create a new folder',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
       .positional('name', { describe: 'new name for the folder' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: folderCreateHandler,
 };
@@ -232,12 +236,12 @@ const folderRenameCommand = {
 };
 
 const folderMoveCommand = {
-  command: 'folder:move <folderId> <parentFolderId>',
+  command: 'folder:move <folderId> <parentId>',
   describe: 'move the folder',
   builder: () => {
     yargs
       .positional('folderId', { describe: 'folder id' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: folderMoveHandler,
 };
@@ -318,16 +322,6 @@ const membershipRevokeCommand = {
   handler: membershipRevokeHandler,
 };
 
-// const objectReadCommand = {
-//   command: 'read <objectId>',
-//   describe: 'compute & decrypt the current object state',
-//   builder: () => {
-//     yargs
-//       .positional('objectId', { describe: 'object id' })
-//   },
-//   handler: objectReadHandler,
-// };
-
 yargs
   .command(<CommandModule><unknown>configureCommand)
   .command(<CommandModule><unknown>walletRecoverCommand)
@@ -341,22 +335,21 @@ yargs
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
   .command(<CommandModule><unknown>stackUploadRevisionCommand)
-  // .command(stackMoveCommand)
-  // .command(stackRevokeCommand)
-  // .command(stackRestoreCommand)
-  // .command(stackDeleteCommand)
-  // .command(memoCreateCommand)
-  // .command(folderCreateCommand)
-  // .command(folderMoveCommand)
-  // .command(folderRenameCommand)
-  // .command(folderRevokeCommand)
-  // .command(folderRestoreCommand)
-  // .command(folderDeleteCommand)
-  // .command(membershipInviteCommand)
-  // .command(membershipAcceptCommand)
-  // .command(membershipRejectCommand)
-  // .command(membershipRevokeCommand)
-  //.command(objectReadCommand)
+  .command(<CommandModule><unknown>stackMoveCommand)
+  .command(<CommandModule><unknown>stackRevokeCommand)
+  .command(<CommandModule><unknown>stackRestoreCommand)
+  .command(<CommandModule><unknown>stackDeleteCommand)
+  .command(<CommandModule><unknown>memoCreateCommand)
+  .command(<CommandModule><unknown>folderCreateCommand)
+  .command(<CommandModule><unknown>folderMoveCommand)
+  .command(<CommandModule><unknown>folderRenameCommand)
+  .command(<CommandModule><unknown>folderRevokeCommand)
+  .command(<CommandModule><unknown>folderRestoreCommand)
+  .command(<CommandModule><unknown>folderDeleteCommand)
+  .command(<CommandModule><unknown>membershipInviteCommand)
+  .command(<CommandModule><unknown>membershipAcceptCommand)
+  .command(<CommandModule><unknown>membershipRejectCommand)
+  .command(<CommandModule><unknown>membershipRevokeCommand)
   .demandCommand()
   .help()
   .argv;
