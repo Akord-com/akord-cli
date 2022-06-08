@@ -137,7 +137,7 @@ async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> 
     const config = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
     if (config.mnemonic) {
       wallet = new WalletFactory(WalletType.Akord, config.mnemonic).walletInstance();
-      (<any>wallet).deriveKeys();
+      await (<any>wallet).deriveKeys();
       jwtToken = config.jwtToken
     } else {
       wallet = new WalletFactory(WalletType.Arweave, config.jwk).walletInstance();
