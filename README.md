@@ -1,10 +1,10 @@
 # akord-cli
-Akord Command Line Interface - simply interact with the [Akord Protocol](https://github.com/Akord-com/akord-protocol/blob/main/PROTOCOL_SPECIFICATION.md) from the terminal.
+Akord Command Line Interface - simply interact with the [Akord Vault Protocol](https://github.com/Akord-com/akord-protocol/blob/main/PROTOCOL_SPECIFICATION.md) from the terminal.
 
 The CLI is a set of Akord commands for creating vaults, adding members, creating new stacks, etc.\
 The CLI creates the encryption context and handles transaction formatting.\
-Each command is an interaction with the Akord Protocol.\
-For each protocol interaction, a reward is distributed to the randomly selected $AKRD [Profit Sharing Token](https://github.com/Akord-com/akord-pst/) holder.
+Each command is an interaction with the Akord Vault Protocol.\
+For each AVP interaction, a reward is distributed to the randomly selected $AKRD [Profit Sharing Token](https://github.com/Akord-com/akord-pst/) holder.
 
 ## Getting started
 ### Install the CLI
@@ -19,6 +19,13 @@ from the published package
 npm install -g akord-cli
 ```
 ### Setup the wallet
+#### Interact with Akord API
+configure the CLI with your Akord account
+```
+akord wallet:cognito <email> <password>
+```
+
+#### Interact directly with Arweave without Akord API
 configure the CLI with your wallet JSON keyfile
 ```
 akord wallet:configure <path-to-wallet-keyfile>
@@ -27,16 +34,6 @@ or generate a new wallet
 ```
 akord wallet:generate
 ```
-
-----
-**_NOTE:_**\
-CLI is currently configured to work with the [RedStone testnet](https://testnet.redstone.tools).\
-All transactions can be viewed in the [testnet explorer](https://sonar.redstone.tools/#/app/contracts?network=testnet).\
-Before using the CLI, make sure to mint some tokens for the wallet address used in the previous step by going to this URL:\
-https://testnet.redstone.tools/mint/{address}/100000000000000\
-example: https://testnet.redstone.tools/mint/uDUlT10M9Krtz7CHdr9c9_ePKp5IP0vwH60pauzsyDY/100000000000000
-
-----
 
 ### Interact with Akord
 Once we've minted some tokens for our wallet, let's create our first vault and upload our first file by following these few simple steps:
