@@ -18,15 +18,20 @@ from the published package
 ```
 npm install -g akord-cli
 ```
-### Setup the wallet
-#### Interact with Akord API
-configure the CLI with your Akord account
+### Interact with Akord API
+First configure the CLI with your Akord account
 ```
 akord wallet:cognito <email> <password>
 ```
+Now let's create our first vault and upload our first file to a folder by following these few simple steps
+```
+akord vault:create "my first vault"
+akord folder:create <vaultId> "my first folder"
+akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
+```
 
-#### Interact directly with Arweave without Akord API
-configure the CLI with your wallet JSON keyfile
+### Interact directly with Arweave without Akord API
+First configure the CLI with your wallet JSON keyfile
 ```
 akord wallet:configure <path-to-wallet-keyfile>
 ```
@@ -34,17 +39,11 @@ or generate a new wallet
 ```
 akord wallet:generate
 ```
-
-### Interact with Akord
-Once we've minted some tokens for our wallet, let's create our first vault and upload our first file by following these few simple steps:
+Now let's create our first vault and upload our first file to a folder by following these few simple steps
 ```
 akord vault:create "my first vault"
-akord stack:create <vaultId> --file-path "./image.jpeg"
-```
-Let's now rename the vault & read the current vault state from the weave
-```
-akord vault:rename <vaultId> "family memories"
-akord read <vaultId>
+akord folder:create <vaultId> "my first folder"
+akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
 ```
 
 ## Akord CLI Commands
@@ -96,9 +95,6 @@ Commands:
   akord membership:reject <membershipId>    reject the invitation to the vault
                                             or leave the vault
   akord membership:revoke <membershipId>    revoke the membership
-
-  akord read <objectId>                     compute & decrypt the current object
-                                            state
 
 Options:
   --version  Show version number                                       [boolean]

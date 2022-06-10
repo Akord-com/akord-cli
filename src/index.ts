@@ -123,7 +123,7 @@ const stackCreateCommand = {
         describe: "name for the new stack, default to the file name"
       })
       .option("p", {
-        alias: "parentId",
+        alias: "parent-id",
         describe: "parent folder id, if null: root folder"
       })
   },
