@@ -1,51 +1,24 @@
 #!/usr/bin/env node
-'use strict';
 
-const yargs = require('yargs');
-const clear = require('clear');
-const figlet = require('figlet');
-const {
-  vaultCreateHandler,
-  vaultRenameHandler,
-  vaultArchiveHandler,
-  vaultRestoreHandler,
-  stackCreateHandler,
-  stackRenameHandler,
-  stackRevokeHandler,
-  stackRestoreHandler,
-  stackUploadRevisionHandler,
-  stackMoveHandler,
-  stackDeleteHandler,
-  memoCreateHandler,
-  folderCreateHandler,
-  folderRenameHandler,
-  folderMoveHandler,
-  folderRevokeHandler,
-  folderRestoreHandler,
-  folderDeleteHandler,
-  membershipInviteHandler,
-  membershipRevokeHandler,
-  membershipAcceptHandler,
-  membershipRejectHandler,
-  objectReadHandler,
-  walletConfigureHandler,
-  walletGenerateHandler,
-  walletImportHandler
-} = require('./handlers');
+import yargs, { CommandModule } from 'yargs';
+import figlet from 'figlet';
+import {
+  vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
+  walletCognitoHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
+} from './handlers';
 
-clear();
 console.log(
   figlet.textSync('Akord', { horizontalLayout: 'full' })
 );
 
-const walletConfigureCommand = {
-  command: 'wallet:configure <key-file>',
-  describe: 'configure the wallet with the JSON keyfile',
+const configureCommand = {
+  command: 'configure <env>',
+  describe: 'configure the CLI',
   builder: () => {
     yargs
-      .positional('key-file', { describe: 'path to the JSON wallet key file' })
+      .positional('env', { describe: 'choose the environment', choices: ['mainnet', 'testnet', 'local'] })
   },
-  handler: walletConfigureHandler,
+  handler: configureHandler,
 };
 
 const walletGenerateCommand = {
@@ -58,13 +31,34 @@ const walletGenerateCommand = {
 };
 
 const walletImportCommand = {
-  command: 'wallet:import <mnemonic>',
-  describe: 'import the wallet from the mnemonic',
+  command: 'wallet:import <key-file>',
+  describe: 'configure the wallet with the JSON keyfile',
+  builder: () => {
+    yargs
+      .positional('key-file', { describe: 'path to the JSON wallet key file' })
+  },
+  handler: walletImportHandler,
+};
+
+const walletCognitoCommand = {
+  command: 'wallet:cognito <email> <password>',
+  describe: 'import the mnemonic from cognito',
+  builder: () => {
+    yargs
+      .positional('email', { describe: 'email' })
+      .positional('password', { describe: 'password' })
+  },
+  handler: walletCognitoHandler,
+};
+
+const walletRecoverCommand = {
+  command: 'wallet:recover <mnemonic>',
+  describe: 'recover the wallet from the mnemonic',
   builder: () => {
     yargs
       .positional('mnemonic', { describe: '12-word seed phrase' })
   },
-  handler: walletImportHandler,
+  handler: walletRecoverHandler,
 };
 
 const vaultCreateCommand = {
@@ -115,9 +109,23 @@ const stackCreateCommand = {
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+      .option("transaction-id", {
+        alias: "transaction-id",
+        describe: "id of the transaction with the file data"
+      })
       .option('public', { type: 'boolean', default: false })
-      .positional('transactionId', { describe: 'id of the transaction with the file data' })
-      .positional('filePath', { describe: 'id of the transaction with the file data' })
+      .option("n", {
+        alias: "name",
+        describe: "name for the new stack, default to the file name"
+      })
+      .option("p", {
+        alias: "parent-id",
+        describe: "parent folder id, if null: root folder"
+      })
   },
   handler: stackCreateHandler,
 };
@@ -139,17 +147,26 @@ const stackUploadRevisionCommand = {
   builder: () => {
     yargs
       .positional('stackId', { describe: 'stack id' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+      .option("transaction-id", {
+        alias: "transaction-id",
+        describe: "id of the transaction with the file data"
+      })
+      .option('public', { type: 'boolean', default: false })
   },
   handler: stackUploadRevisionHandler,
 };
 
 const stackMoveCommand = {
-  command: 'stack:move <stackId> <parentFolderId>',
+  command: 'stack:move <stackId> <parentId>',
   describe: 'move the stack',
   builder: () => {
     yargs
       .positional('stackId', { describe: 'stack id' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: stackMoveHandler,
 };
@@ -196,13 +213,13 @@ const memoCreateCommand = {
 };
 
 const folderCreateCommand = {
-  command: 'folder:create <vaultId> <name> [parentFolderId]',
+  command: 'folder:create <vaultId> <name> [parentId]',
   describe: 'create a new folder',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
       .positional('name', { describe: 'new name for the folder' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: folderCreateHandler,
 };
@@ -219,12 +236,12 @@ const folderRenameCommand = {
 };
 
 const folderMoveCommand = {
-  command: 'folder:move <folderId> <parentFolderId>',
+  command: 'folder:move <folderId> <parentId>',
   describe: 'move the folder',
   builder: () => {
     yargs
       .positional('folderId', { describe: 'folder id' })
-      .positional('parentFolderId', { describe: 'parent folder id, if null: root folder' })
+      .positional('parentId', { describe: 'parent folder id, if null: root folder' })
   },
   handler: folderMoveHandler,
 };
@@ -266,6 +283,11 @@ const membershipInviteCommand = {
     yargs
       .positional('vaultId', { describe: 'vault id' })
       .positional('address', { describe: 'invitee address' })
+      .option("r", {
+        alias: "role",
+        describe: "the role for the new member.",
+        choices: ['CONTRIBUTOR', 'VIEWER']
+      });
   },
   handler: membershipInviteHandler,
 };
@@ -300,43 +322,34 @@ const membershipRevokeCommand = {
   handler: membershipRevokeHandler,
 };
 
-const objectReadCommand = {
-  command: 'object:read <objectId>',
-  describe: 'compute & decrypt the current object state',
-  builder: () => {
-    yargs
-      .positional('objectId', { describe: 'object id' })
-  },
-  handler: objectReadHandler,
-};
-
 yargs
-  .command(walletConfigureCommand)
-  .command(walletGenerateCommand)
-  .command(walletImportCommand)
-  .command(vaultCreateCommand)
-  .command(vaultRenameCommand)
-  .command(vaultArchiveCommand)
-  .command(vaultRestoreCommand)
-  .command(stackCreateCommand)
-  .command(stackRenameCommand)
-  .command(stackUploadRevisionCommand)
-  .command(stackMoveCommand)
-  .command(stackRevokeCommand)
-  .command(stackRestoreCommand)
-  .command(stackDeleteCommand)
-  .command(memoCreateCommand)
-  .command(folderCreateCommand)
-  .command(folderMoveCommand)
-  .command(folderRenameCommand)
-  .command(folderRevokeCommand)
-  .command(folderRestoreCommand)
-  .command(folderDeleteCommand)
-  .command(membershipInviteCommand)
-  .command(membershipAcceptCommand)
-  .command(membershipRejectCommand)
-  .command(membershipRevokeCommand)
-  .command(objectReadCommand)
+  .command(<CommandModule><unknown>configureCommand)
+  .command(<CommandModule><unknown>walletRecoverCommand)
+  .command(<CommandModule><unknown>walletCognitoCommand)
+  .command(<CommandModule><unknown>walletGenerateCommand)
+  .command(<CommandModule><unknown>walletImportCommand)
+  .command(<CommandModule><unknown>vaultCreateCommand)
+  .command(<CommandModule><unknown>vaultRenameCommand)
+  .command(<CommandModule><unknown>vaultArchiveCommand)
+  .command(<CommandModule><unknown>vaultRestoreCommand)
+  .command(<CommandModule><unknown>stackCreateCommand)
+  .command(<CommandModule><unknown>stackRenameCommand)
+  .command(<CommandModule><unknown>stackUploadRevisionCommand)
+  .command(<CommandModule><unknown>stackMoveCommand)
+  .command(<CommandModule><unknown>stackRevokeCommand)
+  .command(<CommandModule><unknown>stackRestoreCommand)
+  .command(<CommandModule><unknown>stackDeleteCommand)
+  .command(<CommandModule><unknown>memoCreateCommand)
+  .command(<CommandModule><unknown>folderCreateCommand)
+  .command(<CommandModule><unknown>folderMoveCommand)
+  .command(<CommandModule><unknown>folderRenameCommand)
+  .command(<CommandModule><unknown>folderRevokeCommand)
+  .command(<CommandModule><unknown>folderRestoreCommand)
+  .command(<CommandModule><unknown>folderDeleteCommand)
+  .command(<CommandModule><unknown>membershipInviteCommand)
+  .command(<CommandModule><unknown>membershipAcceptCommand)
+  .command(<CommandModule><unknown>membershipRejectCommand)
+  .command(<CommandModule><unknown>membershipRevokeCommand)
   .demandCommand()
   .help()
   .argv;
