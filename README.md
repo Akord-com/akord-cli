@@ -21,7 +21,7 @@ npm install -g akord-cli
 ### Interact with Akord API
 First configure the CLI with your Akord account
 ```
-akord wallet:cognito <email> <password>
+akord wallet:login <email> <password>
 ```
 Now let's create our first vault and upload our first file to a folder by following these few simple steps
 ```
@@ -59,7 +59,7 @@ akord <command>
 Commands:
   akord configure <env>                     configure the CLI
   akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
-  akord wallet:cognito <email> <password>   import the mnemonic from cognito
+  akord wallet:login <email> <password>     login & import the wallet
   akord wallet:generate                     generate a new wallet & configure
                                             the CLI
   akord wallet:import <key-file>            configure the wallet with the JSON

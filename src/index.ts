@@ -4,7 +4,7 @@ import yargs, { CommandModule } from 'yargs';
 import figlet from 'figlet';
 import {
   vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
-  walletCognitoHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
+  walletLoginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
 } from './handlers';
 
 console.log(
@@ -40,15 +40,15 @@ const walletImportCommand = {
   handler: walletImportHandler,
 };
 
-const walletCognitoCommand = {
-  command: 'wallet:cognito <email> <password>',
-  describe: 'import the mnemonic from cognito',
+const walletLoginCommand = {
+  command: 'wallet:login <email> <password>',
+  describe: 'login & import the wallet',
   builder: () => {
     yargs
       .positional('email', { describe: 'email' })
       .positional('password', { describe: 'password' })
   },
-  handler: walletCognitoHandler,
+  handler: walletLoginHandler,
 };
 
 const walletRecoverCommand = {
@@ -325,7 +325,7 @@ const membershipRevokeCommand = {
 yargs
   .command(<CommandModule><unknown>configureCommand)
   .command(<CommandModule><unknown>walletRecoverCommand)
-  .command(<CommandModule><unknown>walletCognitoCommand)
+  .command(<CommandModule><unknown>walletLoginCommand)
   .command(<CommandModule><unknown>walletGenerateCommand)
   .command(<CommandModule><unknown>walletImportCommand)
   .command(<CommandModule><unknown>vaultCreateCommand)

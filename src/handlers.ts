@@ -33,13 +33,13 @@ function storeWallet(walletData) {
   }
 }
 
-async function configureHandler(argv) {
+async function configureHandler(argv: { env: string }) {
   const env = argv.env;
   fs.writeFileSync(os.homedir() + "/.akord-cli-config", env);
   console.log("The CLI was configured to use the " + env + " network.");
 }
 
-async function walletImportHandler(argv) {
+async function walletImportHandler(argv: { keyFile: string }) {
   const keyFile = argv.keyFile;
   try {
     const stringKey = fs.readFileSync(keyFile).toString();
@@ -50,7 +50,10 @@ async function walletImportHandler(argv) {
   }
 }
 
-async function walletCognitoHandler(argv) {
+async function walletLoginHandler(argv: {
+  email: string,
+  password: string
+}) {
   const email = argv.email;
   const password = argv.password;
 
@@ -92,7 +95,7 @@ async function walletGenerateHandler() {
   // process.exit(0);
 };
 
-async function walletRecoverHandler(argv) {
+async function walletRecoverHandler(argv: { mnemonic: string }) {
   const mnemonic = argv.mnemonic;
   console.log("Please be patient, recovering the wallet may take a while");
   const wallet = await AkordWallet.importFromBackupPhrase(mnemonic);
@@ -109,7 +112,10 @@ async function walletRecoverHandler(argv) {
   process.exit(0);
 };
 
-async function vaultCreateHandler(argv) {
+async function vaultCreateHandler(argv: {
+  name: string,
+  termsOfAccess: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const name = argv.name;
   const termsOfAccess = argv.termsOfAccess;
@@ -140,7 +146,10 @@ async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> 
   }
 }
 
-async function vaultRenameHandler(argv) {
+async function vaultRenameHandler(argv: {
+  vaultId: string,
+  name: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const name = argv.name;
@@ -151,7 +160,7 @@ async function vaultRenameHandler(argv) {
   process.exit(0);
 }
 
-async function vaultArchiveHandler(argv) {
+async function vaultArchiveHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
@@ -161,7 +170,7 @@ async function vaultArchiveHandler(argv) {
   process.exit(0);
 }
 
-async function vaultRestoreHandler(argv) {
+async function vaultRestoreHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
@@ -171,7 +180,11 @@ async function vaultRestoreHandler(argv) {
   process.exit(0);
 }
 
-async function stackCreateHandler(argv) {
+async function stackCreateHandler(argv: {
+  vaultId: string,
+  parentId?: string,
+  name: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId
   const parentId = argv.parentId
@@ -184,7 +197,7 @@ async function stackCreateHandler(argv) {
   process.exit(0);
 }
 
-async function stackUploadRevisionHandler(argv) {
+async function stackUploadRevisionHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
   const file = await _getFile(argv);
@@ -195,7 +208,7 @@ async function stackUploadRevisionHandler(argv) {
   process.exit(0);
 }
 
-async function _getFile(argv) {
+async function _getFile(argv: any) {
   let file = <any>{};
   if (argv.public) {
     if (argv.filePath) {
@@ -220,7 +233,10 @@ async function _getFile(argv) {
   return file;
 }
 
-async function stackRenameHandler(argv) {
+async function stackRenameHandler(argv: {
+  stackId: string,
+  name: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
   const name = argv.name;
@@ -231,7 +247,7 @@ async function stackRenameHandler(argv) {
   process.exit(0);
 }
 
-async function stackRevokeHandler(argv) {
+async function stackRevokeHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
@@ -241,7 +257,7 @@ async function stackRevokeHandler(argv) {
   process.exit(0);
 }
 
-async function stackRestoreHandler(argv) {
+async function stackRestoreHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
@@ -251,7 +267,7 @@ async function stackRestoreHandler(argv) {
   process.exit(0);
 }
 
-async function stackDeleteHandler(argv) {
+async function stackDeleteHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
@@ -261,7 +277,10 @@ async function stackDeleteHandler(argv) {
   process.exit(0);
 }
 
-async function stackMoveHandler(argv) {
+async function stackMoveHandler(argv: {
+  stackId: string,
+  parentId?: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
   const parentId = argv.parentId;
@@ -272,7 +291,10 @@ async function stackMoveHandler(argv) {
   process.exit(0);
 }
 
-async function memoCreateHandler(argv) {
+async function memoCreateHandler(argv: {
+  vaultId: string,
+  message: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const message = argv.message;
@@ -283,7 +305,11 @@ async function memoCreateHandler(argv) {
   process.exit(0);
 }
 
-async function folderCreateHandler(argv) {
+async function folderCreateHandler(argv: {
+  vaultId: string,
+  parentId?: string,
+  name: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const parentId = argv.parentId;
@@ -295,9 +321,12 @@ async function folderCreateHandler(argv) {
   process.exit(0);
 }
 
-async function folderRenameHandler(argv) {
+async function folderRenameHandler(argv: {
+  folderId: string,
+  name: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
-  const folderId = argv.stackId;
+  const folderId = argv.folderId;
   const name = argv.name;
 
   const akord = await Akord.init(config, wallet, jwtToken);
@@ -306,7 +335,10 @@ async function folderRenameHandler(argv) {
   process.exit(0);
 }
 
-async function folderMoveHandler(argv) {
+async function folderMoveHandler(argv: {
+  folderId: string,
+  parentId?: string
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
   const parentId = argv.parentId;
@@ -317,9 +349,9 @@ async function folderMoveHandler(argv) {
   process.exit(0);
 }
 
-async function folderRevokeHandler(argv) {
+async function folderRevokeHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
-  const folderId = argv.stackId;
+  const folderId = argv.folderId;
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.folderRevoke(folderId);
@@ -327,9 +359,9 @@ async function folderRevokeHandler(argv) {
   process.exit(0);
 }
 
-async function folderRestoreHandler(argv) {
+async function folderRestoreHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
-  const folderId = argv.stackId;
+  const folderId = argv.folderId;
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.folderRestore(folderId);
@@ -337,9 +369,9 @@ async function folderRestoreHandler(argv) {
   process.exit(0);
 }
 
-async function folderDeleteHandler(argv) {
+async function folderDeleteHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
-  const folderId = argv.stackId;
+  const folderId = argv.folderId;
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.folderDelete(folderId);
@@ -347,7 +379,7 @@ async function folderDeleteHandler(argv) {
   process.exit(0);
 }
 
-function getFileFromPath(filePath) {
+function getFileFromPath(filePath: string) {
   let file = <any>{};
   if (!fs.existsSync(filePath)) {
     console.error("Could not find a file in your filesystem: " + filePath);
@@ -360,7 +392,11 @@ function getFileFromPath(filePath) {
   return file;
 }
 
-async function membershipInviteHandler(argv) {
+async function membershipInviteHandler(argv: {
+  vaultId: string,
+  address: string,
+  role?: string,
+}) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
   const address = argv.address;
@@ -373,7 +409,7 @@ async function membershipInviteHandler(argv) {
   process.exit(0);
 }
 
-async function membershipAcceptHandler(argv) {
+async function membershipAcceptHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
@@ -383,7 +419,7 @@ async function membershipAcceptHandler(argv) {
   process.exit(0);
 }
 
-async function membershipRejectHandler(argv) {
+async function membershipRejectHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
@@ -393,7 +429,7 @@ async function membershipRejectHandler(argv) {
   process.exit(0);
 }
 
-async function membershipRevokeHandler(argv) {
+async function membershipRevokeHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
@@ -426,7 +462,7 @@ export {
   membershipRevokeHandler,
   membershipAcceptHandler,
   membershipRejectHandler,
-  walletCognitoHandler,
+  walletLoginHandler,
   walletGenerateHandler,
   walletImportHandler,
   walletRecoverHandler,
