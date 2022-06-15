@@ -10,18 +10,18 @@ For each AVP interaction, a reward is distributed to the randomly selected $AKRD
 ### Install the CLI
 locally
 ```
-npm install
-npm run build
-npm run local
+yarn install
+yarn build
+yarn local
 ```
 from the published package
 ```
-npm install -g akord-cli
+yarn install -g akord-cli
 ```
 ### Interact with Akord API
 First configure the CLI with your Akord account
 ```
-akord wallet:login <email> <password>
+akord login <email> <password>
 ```
 Now let's create our first vault and upload our first file to a folder by following these few simple steps
 ```
@@ -57,9 +57,9 @@ akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
 akord <command>
 
 Commands:
+  akord login <email> <password>            login & import the wallet
   akord configure <env>                     configure the CLI
   akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
-  akord wallet:login <email> <password>     login & import the wallet
   akord wallet:generate                     generate a new wallet & configure
                                             the CLI
   akord wallet:import <key-file>            configure the wallet with the JSON

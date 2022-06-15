@@ -4,12 +4,23 @@ import yargs, { CommandModule } from 'yargs';
 import figlet from 'figlet';
 import {
   vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
-  walletLoginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
+  loginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
 } from './handlers';
 
 console.log(
   figlet.textSync('Akord', { horizontalLayout: 'full' })
 );
+
+const loginCommand = {
+  command: 'login <email> <password>',
+  describe: 'login & import the wallet',
+  builder: () => {
+    yargs
+      .positional('email', { describe: 'email' })
+      .positional('password', { describe: 'password' })
+  },
+  handler: loginHandler,
+};
 
 const configureCommand = {
   command: 'configure <env>',
@@ -38,17 +49,6 @@ const walletImportCommand = {
       .positional('key-file', { describe: 'path to the JSON wallet key file' })
   },
   handler: walletImportHandler,
-};
-
-const walletLoginCommand = {
-  command: 'wallet:login <email> <password>',
-  describe: 'login & import the wallet',
-  builder: () => {
-    yargs
-      .positional('email', { describe: 'email' })
-      .positional('password', { describe: 'password' })
-  },
-  handler: walletLoginHandler,
 };
 
 const walletRecoverCommand = {
@@ -323,9 +323,9 @@ const membershipRevokeCommand = {
 };
 
 yargs
+  .command(<CommandModule><unknown>loginCommand)
   .command(<CommandModule><unknown>configureCommand)
   .command(<CommandModule><unknown>walletRecoverCommand)
-  .command(<CommandModule><unknown>walletLoginCommand)
   .command(<CommandModule><unknown>walletGenerateCommand)
   .command(<CommandModule><unknown>walletImportCommand)
   .command(<CommandModule><unknown>vaultCreateCommand)

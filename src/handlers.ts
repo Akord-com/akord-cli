@@ -50,7 +50,7 @@ async function walletImportHandler(argv: { keyFile: string }) {
   }
 }
 
-async function walletLoginHandler(argv: {
+async function loginHandler(argv: {
   email: string,
   password: string
 }) {
@@ -462,7 +462,7 @@ export {
   membershipRevokeHandler,
   membershipAcceptHandler,
   membershipRejectHandler,
-  walletLoginHandler,
+  loginHandler,
   walletGenerateHandler,
   walletImportHandler,
   walletRecoverHandler,
