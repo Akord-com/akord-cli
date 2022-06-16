@@ -121,7 +121,7 @@ async function vaultCreateHandler(argv: {
   const termsOfAccess = argv.termsOfAccess;
 
   const akord = await Akord.init(config, wallet, jwtToken);
-  const response = await akord.createVault(name, termsOfAccess);
+  const response = await akord.vaultCreate(name, termsOfAccess);
   console.log(response);
   process.exit(0);
 }
