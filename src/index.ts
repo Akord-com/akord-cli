@@ -4,7 +4,8 @@ import yargs, { CommandModule } from 'yargs';
 import figlet from 'figlet';
 import {
   vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
-  loginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler
+  loginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler, vaultListHandler, vaultShowHandler,
+  stackListHandler, stackShowHandler, folderListHandler, folderShowHandler
 } from './handlers';
 
 console.log(
@@ -322,6 +323,62 @@ const membershipRevokeCommand = {
   handler: membershipRevokeHandler,
 };
 
+const vaultListCommand = {
+  command: 'vault:list',
+  describe: 'list all vaults',
+  builder: () => {},
+  handler: vaultListHandler,
+};
+
+const vaultShowCommand = {
+  command: 'vault:show <vaultId>',
+  describe: 'show vault content',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+  },
+  handler: vaultShowHandler,
+};
+
+const stackListCommand = {
+  command: 'stack:list <vaultId>',
+  describe: 'list all stacks within the given vault',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+  },
+  handler: stackListHandler,
+};
+
+const folderListCommand = {
+  command: 'folder:list <vaultId>',
+  describe: 'list all folders within the given vault',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+  },
+  handler: folderListHandler,
+};
+
+const folderShowCommand = {
+  command: 'folder:show <stackId>',
+  describe: 'show folder content',
+  builder: () => {
+    yargs
+      .positional('folderId', { describe: 'folder id' })
+  },
+  handler: folderShowHandler,
+};
+const stackShowCommand = {
+  command: 'stack:show <stackId>',
+  describe: 'show stack content',
+  builder: () => {
+    yargs
+      .positional('stackId', { describe: 'stack id' })
+  },
+  handler: stackShowHandler,
+};
+
 yargs
   .command(<CommandModule><unknown>loginCommand)
   .command(<CommandModule><unknown>configureCommand)
@@ -350,6 +407,12 @@ yargs
   .command(<CommandModule><unknown>membershipAcceptCommand)
   .command(<CommandModule><unknown>membershipRejectCommand)
   .command(<CommandModule><unknown>membershipRevokeCommand)
+  .command(<CommandModule><unknown>vaultListCommand)
+  .command(<CommandModule><unknown>vaultShowCommand)
+  .command(<CommandModule><unknown>stackListCommand)
+  .command(<CommandModule><unknown>stackShowCommand)
+  .command(<CommandModule><unknown>folderListCommand)
+  .command(<CommandModule><unknown>folderShowCommand)
   .demandCommand()
   .help()
   .argv;

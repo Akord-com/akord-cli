@@ -439,6 +439,65 @@ async function membershipRevokeHandler(argv: { membershipId: string }) {
   process.exit(0);
 }
 
+async function vaultListHandler() {
+  const { wallet, jwtToken } = await loadCredentials();
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.getVaults();
+  console.table(response);
+  process.exit(0);
+}
+
+async function vaultShowHandler(argv: { vaultId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId;
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.decryptNode(vaultId, "Vault");
+  console.log(response);
+  process.exit(0);
+}
+
+async function stackListHandler(argv: { vaultId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId;
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.getNodes(vaultId, "Stack");
+  console.table(response);
+  process.exit(0);
+}
+
+async function folderListHandler(argv: { vaultId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId;
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.getNodes(vaultId, "Folder");
+  console.table(response);
+  process.exit(0);
+}
+
+async function folderShowHandler(argv: { folderId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const folderId = argv.folderId;
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.decryptNode(folderId, "Folder");
+  console.log(response);
+  process.exit(0);
+}
+
+async function stackShowHandler(argv: { stackId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const stackId = argv.stackId;
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const response = await akord.decryptNode(stackId, "Stack");
+  console.log(response);
+  process.exit(0);
+}
+
 export {
   vaultCreateHandler,
   vaultRenameHandler,
@@ -467,4 +526,10 @@ export {
   walletImportHandler,
   walletRecoverHandler,
   configureHandler,
+  vaultListHandler,
+  vaultShowHandler,
+  stackListHandler,
+  stackShowHandler,
+  folderListHandler,
+  folderShowHandler
 }
