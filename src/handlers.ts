@@ -5,7 +5,8 @@ import {
   askForTransactionId,
   askForStackName,
   askForUploadType,
-  askForRole
+  askForRole,
+  askForPassword
 } from "./inquirers";
 import os from 'os';
 import Akord from "@akord/akord-js"
@@ -52,11 +53,14 @@ async function walletImportHandler(argv: { keyFile: string }) {
 
 async function loginHandler(argv: {
   email: string,
-  password: string
+  password?: string
 }) {
   const email = argv.email;
-  const password = argv.password;
+  let password = argv.password;
 
+  if (!password) {
+    password = (await askForPassword()).password;
+  }
   const apiAuthenticator = new ApiAuthenticator(config);
   const jwtToken = await apiAuthenticator.getJWTToken(email, password);
   const userAttributes = await apiAuthenticator.getUserAttributes(email, password);

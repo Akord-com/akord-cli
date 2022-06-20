@@ -21,7 +21,7 @@ yarn install -g akord-cli
 ### Interact with Akord API
 First configure the CLI with your Akord account
 ```
-akord login <email> <password>
+akord login <email>
 ```
 Now let's create our first vault and upload our first file to a folder by following these few simple steps
 ```
@@ -57,7 +57,7 @@ akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
 akord <command>
 
 Commands:
-  akord login <email> <password>            login & import the wallet
+  akord login <email>                       login & import the wallet
   akord configure <env>                     configure the CLI
   akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
   akord wallet:generate                     generate a new wallet & configure

@@ -31,6 +31,16 @@ const askForStackName = async (name: string): Promise<{ name: string }> => {
   ]);
 };
 
+const askForPassword = async (): Promise<{ password: string }> => {
+  return inquirer.prompt([
+    {
+      name: 'password',
+      type: 'password',
+      message: `Type your password:`
+    },
+  ]);
+};
+
 const askForUploadType = async () => {
   return inquirer
     .prompt([
@@ -66,5 +76,6 @@ export {
   askForTransactionId,
   askForStackName,
   askForUploadType,
-  askForRole
+  askForRole,
+  askForPassword
 }

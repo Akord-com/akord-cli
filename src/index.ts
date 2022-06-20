@@ -3,9 +3,39 @@
 import yargs, { CommandModule } from 'yargs';
 import figlet from 'figlet';
 import {
-  vaultCreateHandler, vaultRenameHandler, vaultArchiveHandler, vaultRestoreHandler, stackCreateHandler, stackRenameHandler, stackRevokeHandler, stackRestoreHandler, stackUploadRevisionHandler, stackMoveHandler, stackDeleteHandler, memoCreateHandler, folderCreateHandler, folderRenameHandler, folderMoveHandler, folderRevokeHandler, folderRestoreHandler, folderDeleteHandler, membershipInviteHandler, membershipRevokeHandler, membershipAcceptHandler, membershipRejectHandler,
-  loginHandler, walletGenerateHandler, walletImportHandler, walletRecoverHandler, configureHandler, vaultListHandler, vaultShowHandler,
-  stackListHandler, stackShowHandler, folderListHandler, folderShowHandler
+  vaultCreateHandler,
+  vaultRenameHandler,
+  vaultArchiveHandler,
+  vaultRestoreHandler,
+  stackCreateHandler,
+  stackRenameHandler,
+  stackRevokeHandler,
+  stackRestoreHandler,
+  stackUploadRevisionHandler,
+  stackMoveHandler,
+  stackDeleteHandler,
+  memoCreateHandler,
+  folderCreateHandler,
+  folderRenameHandler,
+  folderMoveHandler,
+  folderRevokeHandler,
+  folderRestoreHandler,
+  folderDeleteHandler,
+  membershipInviteHandler,
+  membershipRevokeHandler,
+  membershipAcceptHandler,
+  membershipRejectHandler,
+  loginHandler,
+  walletGenerateHandler,
+  walletImportHandler,
+  walletRecoverHandler,
+  configureHandler,
+  vaultListHandler,
+  vaultShowHandler,
+  stackListHandler,
+  stackShowHandler,
+  folderListHandler,
+  folderShowHandler
 } from './handlers';
 
 console.log(
@@ -13,12 +43,15 @@ console.log(
 );
 
 const loginCommand = {
-  command: 'login <email> <password>',
+  command: 'login <email>',
   describe: 'login & import the wallet',
   builder: () => {
     yargs
       .positional('email', { describe: 'email' })
-      .positional('password', { describe: 'password' })
+      .option("p", {
+        alias: "password",
+        describe: "user password"
+      })
   },
   handler: loginHandler,
 };
@@ -326,7 +359,7 @@ const membershipRevokeCommand = {
 const vaultListCommand = {
   command: 'vault:list',
   describe: 'list all vaults',
-  builder: () => {},
+  builder: () => { },
   handler: vaultListHandler,
 };
 
