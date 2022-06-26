@@ -41,6 +41,16 @@ const askForPassword = async (): Promise<{ password: string }> => {
   ]);
 };
 
+const askForCode = async (): Promise<{ code: string }> => {
+  return inquirer.prompt([
+    {
+      name: 'code',
+      type: 'input',
+      message: `Type verification code:`
+    },
+  ]);
+};
+
 const askForUploadType = async () => {
   return inquirer
     .prompt([
@@ -77,5 +87,6 @@ export {
   askForStackName,
   askForUploadType,
   askForRole,
-  askForPassword
+  askForPassword,
+  askForCode
 }

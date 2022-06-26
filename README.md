@@ -57,7 +57,8 @@ akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
 akord <command>
 
 Commands:
-  akord login <email>                       login & import the wallet
+  akord login <email>                       login & import the Akord wallet
+  akord signup <email>                      signup & generate the Akord wallet
   akord configure <env>                     configure the CLI
   akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
   akord wallet:generate                     generate a new wallet & configure

@@ -6,7 +6,8 @@ import {
   askForStackName,
   askForUploadType,
   askForRole,
-  askForPassword
+  askForPassword,
+  askForCode
 } from "./inquirers";
 import os from 'os';
 import Akord from "@akord/akord-js"
@@ -73,10 +74,38 @@ async function loginHandler(argv: {
   const address = await wallet.getAddress();
   const publicKey = await wallet.publicKey();
   const signingPublicKey = await wallet.signingPublicKey();
-  console.log("Your wallet was imported & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
   console.log("Your wallet public key: " + publicKey);
   console.log("Your wallet signing public key: " + signingPublicKey);
+  process.exit(0);
+}
+
+async function signupHandler(argv: {
+  email: string,
+  password?: string
+}) {
+  const email = argv.email;
+  let password = argv.password;
+
+  if (!password) {
+    password = (await askForPassword()).password;
+  }
+
+  const wallet = await AkordWallet.create(password);
+
+  const apiAuthenticator = new ApiAuthenticator(config);
+  await apiAuthenticator.signup(email, password, {
+    email,
+    "custom:encBackupPhrase": wallet.encBackupPhrase,
+    "custom:publicKey": await wallet.publicKey(),
+    "custom:publicSigningKey": await wallet.signingPublicKey(),
+    "custom:mode": "dark",
+    "custom:notifications": "true",
+  });
+  console.log("Your account was successfully created. We have sent you the verification code.");
+  const code = (await askForCode()).code;
+  await apiAuthenticator.verifyAccount(email, code);
+  console.log("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
 }
 
@@ -109,7 +138,6 @@ async function walletRecoverHandler(argv: { mnemonic: string }) {
   const address = await wallet.getAddress();
   const publicKey = await wallet.publicKey();
   const signingPublicKey = await wallet.signingPublicKey();
-  console.log("Your wallet was imported & stored successfully at: ~/.akord");
   console.log("Your wallet address: " + address);
   console.log("Your wallet public key: " + publicKey);
   console.log("Your wallet signing public key: " + signingPublicKey);
@@ -457,7 +485,7 @@ async function vaultShowHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(config, wallet, jwtToken);
-  const response = await akord.decryptNode(vaultId, "Vault");
+  const response = await akord.decryptNode(vaultId, "Vault", vaultId);
   console.log(response);
   process.exit(0);
 }
@@ -526,6 +554,7 @@ export {
   membershipAcceptHandler,
   membershipRejectHandler,
   loginHandler,
+  signupHandler,
   walletGenerateHandler,
   walletImportHandler,
   walletRecoverHandler,

@@ -11,11 +11,7 @@ export default class ApiAuthenticator {
   }
 
   public getCognitoUser(username: string): AmazonCognitoIdentity.CognitoUser {
-    const poolData = {
-      UserPoolId: this.config.aws_user_pools_id,
-      ClientId: this.config.aws_user_pools_web_client_id
-    };
-    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+    const userPool = this.getCognitoUserPool();
     const userData = {
       Username: username,
       Pool: userPool
@@ -24,9 +20,18 @@ export default class ApiAuthenticator {
     return cognitoUser;
   }
 
+  public getCognitoUserPool(): AmazonCognitoIdentity.CognitoUserPool {
+    const poolData = {
+      UserPoolId: this.config.aws_user_pools_id,
+      ClientId: this.config.aws_user_pools_web_client_id
+    };
+    const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
+    return userPool;
+  }
+
   public async getJWTToken(username: string, password: string): Promise<string> {
     const { session } = await this.authenticateUser(username, password);
-    return session.getIdToken().getJwtToken();
+    return session.getAccessToken().getJwtToken();
   }
 
   public async authenticateUser(username: string, password: string): Promise<{
@@ -71,6 +76,55 @@ export default class ApiAuthenticator {
         resolve(attributes);
       })
     }
+    );
+  }
+
+  public async signup(email: string, password: string, customAttributes: any): Promise<Object> {
+    let attributes = [];
+
+    for (const [key, value] of Object.entries(customAttributes)) {
+      attributes.push(new AmazonCognitoIdentity.CognitoUserAttribute({
+        Name: key,
+        Value: <string>value
+      }));
+    }
+
+    const userPool = this.getCognitoUserPool();
+
+    return new Promise((resolve, reject) =>
+      userPool.signUp(email, password, attributes, null, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      }, { clientType: "CLI" })
+    );
+  }
+
+  public async resendCode(email: string): Promise<Object> {
+    const user = this.getCognitoUser(email);
+    return new Promise((resolve, reject) =>
+      user.resendConfirmationCode((err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      })
+    );
+  }
+
+  public async verifyAccount(email: string, code: string): Promise<Object> {
+    const user = this.getCognitoUser(email);
+    return new Promise((resolve, reject) =>
+      user.confirmRegistration(code, false, (err, result) => {
+        if (err) {
+          reject(err);
+        } else {
+          resolve(result);
+        }
+      })
     );
   }
 }

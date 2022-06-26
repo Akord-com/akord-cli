@@ -26,6 +26,7 @@ import {
   membershipAcceptHandler,
   membershipRejectHandler,
   loginHandler,
+  signupHandler,
   walletGenerateHandler,
   walletImportHandler,
   walletRecoverHandler,
@@ -44,7 +45,7 @@ console.log(
 
 const loginCommand = {
   command: 'login <email>',
-  describe: 'login & import the wallet',
+  describe: 'login & import the Akord wallet',
   builder: () => {
     yargs
       .positional('email', { describe: 'email' })
@@ -54,6 +55,20 @@ const loginCommand = {
       })
   },
   handler: loginHandler,
+};
+
+const signupCommand = {
+  command: 'signup <email>',
+  describe: 'signup & generate the Akord wallet',
+  builder: () => {
+    yargs
+      .positional('email', { describe: 'email' })
+      .option("p", {
+        alias: "password",
+        describe: "user password"
+      })
+  },
+  handler: signupHandler,
 };
 
 const configureCommand = {
@@ -414,6 +429,7 @@ const stackShowCommand = {
 
 yargs
   .command(<CommandModule><unknown>loginCommand)
+  .command(<CommandModule><unknown>signupCommand)
   .command(<CommandModule><unknown>configureCommand)
   .command(<CommandModule><unknown>walletRecoverCommand)
   .command(<CommandModule><unknown>walletGenerateCommand)
