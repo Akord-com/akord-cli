@@ -1,17 +1,22 @@
 {
-  "name": "akord-cli",
-  "version": "0.1.0",
+  "name": "@akord/akord-cli",
+  "version": "0.1.1",
   "description": "Akord Command Line Interface",
-  "main": "./lib/index.js",
+  "main": "lib/index.js",
   "bin": {
-    "akord": "./lib/index.js"
+    "akord": "lib/index.js"
   },
   "scripts": {
     "test": "jest --watchAll --verbose false --collectCoverage=false",
     "build": "tsc -p .",
-    "local": "sudo npm i -g && akord",
+    "local": "sudo npm install -g && akord",
     "start": "nodemon --watch 'src/**/*.ts' --exec 'ts-node' src/index.ts"
   },
+  "files": [
+    "lib/**/*.js",
+    "lib/**/*.d.ts",
+    "lib/index.d.ts"
+  ],
   "keywords": [
     "akord",
     "cli",

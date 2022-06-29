@@ -2,21 +2,20 @@
 Akord Command Line Interface - simply interact with the [Akord Vault Protocol](https://github.com/Akord-com/akord-protocol/blob/main/PROTOCOL_SPECIFICATION.md) from the terminal.
 
 The CLI is a set of Akord commands for creating vaults, adding members, creating new stacks, etc.\
-The CLI creates the encryption context and handles transaction formatting.\
+The CLI uses [Akord Client](https://www.npmjs.com/package/@akord/akord-js) to create the encryption context and handle transaction formatting.\
 Each command is an interaction with the Akord Vault Protocol.\
 For each AVP interaction, a reward is distributed to the randomly selected $AKRD [Profit Sharing Token](https://github.com/Akord-com/akord-pst/) holder.
 
 ## Getting started
 ### Install the CLI
+```
+yarn global add @akord/akord-cli
+```
 locally
 ```
 yarn install
 yarn build
 yarn local
-```
-from the published package
-```
-yarn install -g akord-cli
 ```
 ### Interact with Akord API
 First configure the CLI with your Akord account
