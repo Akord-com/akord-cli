@@ -12,18 +12,15 @@ import {
 import os from 'os';
 import Akord from "@akord/akord-js"
 import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
-import { ClientConfig, EnvType, LedgerVersion } from "./client-config";
+import { ClientConfig } from "./client-config";
 import ApiAuthenticator from "./api-authenticator";
+import { randomUUID } from 'crypto';
 
 export function initInstance(config: ClientConfig, wallet: Wallet, jwtToken: string) {
   return new Akord(config, wallet, jwtToken);
 }
 
-let config = {
-  env: EnvType.DEV,
-  wallet: WalletType.Akord,
-  ledger: LedgerVersion.V2
-}
+let config = {};
 
 function storeWallet(walletData) {
   try {
@@ -522,7 +519,7 @@ async function folderShowHandler(argv: { folderId: string }) {
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.decryptNode(folderId, "Folder");
-  displayResponse(response);
+  console.log(response);
   process.exit(0);
 }
 
@@ -532,7 +529,29 @@ async function stackShowHandler(argv: { stackId: string }) {
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.decryptNode(stackId, "Stack");
-  displayResponse(response);
+  console.log(response);
+  process.exit(0);
+}
+
+async function fileGetHandler(argv: { fileUrl: string, vaultId: string, filePath: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const fileUrl = argv.fileUrl;
+  const vaultId = argv.vaultId;
+  let filePath = argv.filePath;
+
+  if (filePath && fs.existsSync(filePath)) {
+    console.error("File within the given path already exist, please choose a different path and try again.");
+    process.exit(0);
+  }
+
+  if (!filePath) {
+    filePath = process.cwd() + "/" + randomUUID();
+  }
+
+  const akord = await Akord.init(config, wallet, jwtToken);
+  const file = await akord.getFile(fileUrl, vaultId);
+  fs.writeFileSync(filePath, Buffer.from(file));
+  console.error("The file was successfully downloaded, decrypted & stored in: " + filePath);
   process.exit(0);
 }
 
@@ -570,5 +589,6 @@ export {
   stackListHandler,
   stackShowHandler,
   folderListHandler,
-  folderShowHandler
+  folderShowHandler,
+  fileGetHandler
 }

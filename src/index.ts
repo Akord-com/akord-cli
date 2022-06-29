@@ -36,7 +36,8 @@ import {
   stackListHandler,
   stackShowHandler,
   folderListHandler,
-  folderShowHandler
+  folderShowHandler,
+  fileGetHandler
 } from './handlers';
 
 console.log(
@@ -417,6 +418,7 @@ const folderShowCommand = {
   },
   handler: folderShowHandler,
 };
+
 const stackShowCommand = {
   command: 'stack:show <stackId>',
   describe: 'show stack content',
@@ -425,6 +427,21 @@ const stackShowCommand = {
       .positional('stackId', { describe: 'stack id' })
   },
   handler: stackShowHandler,
+};
+
+const fileGetCommand = {
+  command: 'file:get <fileUrl> <vaultId>',
+  describe: 'get file content',
+  builder: () => {
+    yargs
+      .positional('fileUrl', { describe: 'file url' })
+      .positional('vaultId', { describe: 'vault id for the decryption context' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+  },
+  handler: fileGetHandler,
 };
 
 yargs
@@ -462,6 +479,7 @@ yargs
   .command(<CommandModule><unknown>stackShowCommand)
   .command(<CommandModule><unknown>folderListCommand)
   .command(<CommandModule><unknown>folderShowCommand)
+  .command(<CommandModule><unknown>fileGetCommand)
   .demandCommand()
   .help()
   .argv;
