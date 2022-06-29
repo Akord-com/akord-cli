@@ -6,6 +6,10 @@ The CLI uses [Akord Client](https://www.npmjs.com/package/@akord/akord-js) to cr
 Each command is an interaction with the Akord Vault Protocol.\
 For each AVP interaction, a reward is distributed to the randomly selected $AKRD [Profit Sharing Token](https://github.com/Akord-com/akord-pst/) holder.
 
+### Disclaimer
+This is an Early Adopter Release of Akord CLI - working with Development version of Akord APIs - use it at your own risk ;)\
+Production version is coming soon.
+
 ## Getting started
 ### Install the CLI
 ```
