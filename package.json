@@ -18,10 +18,10 @@
     "storage",
     "web3"
   ],
-  "author": "",
+  "author": "Akord Team",
   "license": "ISC",
   "dependencies": {
-    "@akord/akord-js": "^0.1.2",
+    "@akord/akord-js": "^0.1.3",
     "@akord/crypto": "^0.0.29",
     "amazon-cognito-identity-js": "^5.2.8",
     "aws-appsync": "^4.1.5",
