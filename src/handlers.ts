@@ -158,7 +158,7 @@ async function vaultCreateHandler(argv: {
 function displayResponse(response: any) {
   console.log(response);
   console.log("Your transaction has been successfully commited. You can view it in the explorer by visiting the link below:");
-  console.log("https://sonar.warp.cc/#/app/interaction/" + response.transactions[response.transactions.length -1].id);
+  console.log("https://sonar.warp.cc/#/app/interaction/" + response.transactions[response.transactions.length - 1].id);
 }
 
 async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> {
@@ -489,7 +489,7 @@ async function vaultShowHandler(argv: { vaultId: string }) {
 
   const akord = await Akord.init(config, wallet, jwtToken);
   const response = await akord.decryptNode(vaultId, "Vault", vaultId);
-  displayResponse(response);
+  console.log(response);
   process.exit(0);
 }
 
@@ -533,10 +533,10 @@ async function stackShowHandler(argv: { stackId: string }) {
   process.exit(0);
 }
 
-async function fileGetHandler(argv: { fileUrl: string, vaultId: string, filePath: string }) {
+async function stackDownloadHandler(argv: { stackId: string, fileVersion: string, filePath: string }) {
   const { wallet, jwtToken } = await loadCredentials();
-  const fileUrl = argv.fileUrl;
-  const vaultId = argv.vaultId;
+  const stackId = argv.stackId;
+  const version = argv.fileVersion;
   let filePath = argv.filePath;
 
   if (filePath && fs.existsSync(filePath)) {
@@ -549,7 +549,7 @@ async function fileGetHandler(argv: { fileUrl: string, vaultId: string, filePath
   }
 
   const akord = await Akord.init(config, wallet, jwtToken);
-  const file = await akord.getFile(fileUrl, vaultId);
+  const file = await akord.getStackFile(stackId, version);
   fs.writeFileSync(filePath, Buffer.from(file));
   console.error("The file was successfully downloaded, decrypted & stored in: " + filePath);
   process.exit(0);
@@ -590,5 +590,5 @@ export {
   stackShowHandler,
   folderListHandler,
   folderShowHandler,
-  fileGetHandler
+  stackDownloadHandler
 }
