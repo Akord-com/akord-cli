@@ -9,8 +9,7 @@ export interface ClientConfig {
 
 export enum EnvType {
   PROD = "prod",
-  DEV = "dev",
-  TEST = "test"
+  DEV = "dev"
 }
 
 export enum NetworkType {

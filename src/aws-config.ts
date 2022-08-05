@@ -1,5 +1,3 @@
-import { AUTH_TYPE } from "aws-appsync";
-
 export const awsConfig = (env: string) => {
   switch (env) {
     case "mainnet":
@@ -56,7 +54,7 @@ export interface AWSConfig {
   oauth: any,
   aws_appsync_graphqlEndpoint: string,
   aws_appsync_region: string,
-  aws_appsync_authenticationType: string | AUTH_TYPE,
+  aws_appsync_authenticationType: string,
   aws_user_files_s3_bucket: string,
   aws_user_files_s3_bucket_region: string
 }
