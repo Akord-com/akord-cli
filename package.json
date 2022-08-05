@@ -1,6 +1,6 @@
 {
   "name": "@akord/akord-cli",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "description": "Akord Command Line Interface",
   "main": "lib/index.js",
   "bin": {
