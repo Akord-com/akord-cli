@@ -15,6 +15,9 @@ import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
 import { ClientConfig } from "./client-config";
 import ApiAuthenticator from "./api-authenticator";
 import { randomUUID } from 'crypto';
+import { pushDirToVault } from "./sync";
+import { awsConfig } from './aws-config';
+import { EnvType } from '@akord/akord-js/lib/client-config';
 
 export function initInstance(config: ClientConfig, wallet: Wallet, jwtToken: string) {
   return new Akord(config, wallet, jwtToken);
@@ -558,6 +561,23 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
   process.exit(0);
 }
 
+async function pushHandler(argv: {
+  dir: string,
+  name: string
+}) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const dir = argv.dir;
+  const name = argv.name;
+
+  const akord = await Akord.init({env: EnvType.TESTNET}, wallet, jwtToken);
+  await pushDirToVault(dir, akord, name, "")
+
+  // const { transactionId } = await akord.stackRename(stackId, name);
+  // displayResponse(transactionId);
+
+  process.exit(0);
+}
+
 export {
   vaultCreateHandler,
   vaultRenameHandler,
@@ -593,5 +613,6 @@ export {
   stackShowHandler,
   folderListHandler,
   folderShowHandler,
-  stackDownloadHandler
+  stackDownloadHandler,
+  pushHandler
 }

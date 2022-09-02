@@ -37,7 +37,8 @@ import {
   stackShowHandler,
   folderListHandler,
   folderShowHandler,
-  stackDownloadHandler
+  stackDownloadHandler,
+  pushHandler
 } from './handlers';
 
 console.log(
@@ -152,6 +153,17 @@ const vaultRestoreCommand = {
   },
   handler: vaultRestoreHandler,
 };
+
+const pushCommand = {
+  command: 'push <dir> <name>',
+  describe: 'push the local <dir> to a new vault named <name>.',
+  builder: () => {
+    yargs
+      .positional('dir', { describe: 'source folder with files/folders to push' })
+      .positional('name', { describe: 'new name for the vault' })
+  },
+  handler: pushHandler,
+}
 
 const stackCreateCommand = {
   command: 'stack:create <vaultId>',
@@ -483,6 +495,7 @@ yargs
   .command(<CommandModule><unknown>folderListCommand)
   .command(<CommandModule><unknown>folderShowCommand)
   .command(<CommandModule><unknown>stackDownloadCommand)
+  .command(<CommandModule><unknown>pushCommand)
   .demandCommand()
   .help()
   .argv;
