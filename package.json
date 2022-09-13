@@ -3,6 +3,7 @@
   "version": "0.1.4",
   "description": "Akord Command Line Interface",
   "main": "lib/index.js",
+  "repository": "git@github.com:Akord-com/akord-cli.git",
   "bin": {
     "akord": "lib/index.js"
   },
@@ -20,11 +21,17 @@
   "keywords": [
     "akord",
     "cli",
+    "vault",
     "storage",
+    "collaboration",
+    "arweave",
+    "permaweb",
+    "blockchain",
+    "tooling",
     "web3"
   ],
   "author": "Akord Team",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "@akord/akord-js": "^0.3.11",
     "@akord/crypto": "^0.0.29",
