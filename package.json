@@ -33,8 +33,8 @@
   "author": "Akord Team",
   "license": "MIT",
   "dependencies": {
-    "@akord/akord-js": "^0.3.11",
-    "@akord/crypto": "^0.0.29",
+    "@akord/akord-js": "^0.3.38",
+    "@akord/crypto": "^0.0.38",
     "amazon-cognito-identity-js": "^5.2.8",
     "cross-fetch": "^3.1.5",
     "figlet": "^1.5.2",
