@@ -39,6 +39,7 @@ import {
   folderShowHandler,
   stackDownloadHandler
 } from './handlers';
+import './polyfill'
 
 console.log(
   figlet.textSync('Akord', { horizontalLayout: 'full' })
