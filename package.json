@@ -30,11 +30,18 @@
     "tooling",
     "web3"
   ],
+  "bugs": {
+    "url": "https://github.com/Akord-com/akord-cli/issues"
+  },
+  "homepage": "https://github.com/Akord-com/akord-cli#readme",
   "author": "Akord Team",
   "license": "MIT",
+  "engines": {
+    "node": ">=16.0.0 <17.0.0"
+  },
   "dependencies": {
-    "@akord/akord-js": "^0.3.38",
-    "@akord/crypto": "^0.0.38",
+    "@akord/akord-js": "^0.3.53",
+    "@akord/crypto": "^0.0.43",
     "amazon-cognito-identity-js": "^5.2.8",
     "cross-fetch": "^3.1.5",
     "figlet": "^1.5.2",

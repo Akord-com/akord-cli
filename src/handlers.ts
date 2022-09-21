@@ -12,11 +12,10 @@ import {
 import os from 'os';
 import Akord from "@akord/akord-js"
 import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
-import { ClientConfig } from "./client-config";
 import ApiAuthenticator from "./api-authenticator";
 import { randomUUID } from 'crypto';
 
-export function initInstance(config: ClientConfig, wallet: Wallet, jwtToken: string) {
+export function initInstance(config: any, wallet: Wallet, jwtToken: string) {
   return new Akord(config, wallet, jwtToken);
 }
 
@@ -32,23 +31,6 @@ function storeWallet(walletData) {
   }
 }
 
-async function configureHandler(argv: { env: string }) {
-  const env = argv.env;
-  fs.writeFileSync(os.homedir() + "/.akord-cli-config", env);
-  console.log("The CLI was configured to use the " + env + " network.");
-}
-
-async function walletImportHandler(argv: { keyFile: string }) {
-  const keyFile = argv.keyFile;
-  try {
-    const stringKey = fs.readFileSync(keyFile).toString();
-    storeWallet(stringKey);
-  } catch (error) {
-    console.log("Oops, something went wrong when configuring your wallet: " + error);
-    process.exit(0);
-  }
-}
-
 async function loginHandler(argv: {
   email: string,
   password?: string
@@ -59,7 +41,7 @@ async function loginHandler(argv: {
   if (!password) {
     password = (await askForPassword()).password;
   }
-  const apiAuthenticator = new ApiAuthenticator(config);
+  const apiAuthenticator = new ApiAuthenticator();
   const jwtToken = await apiAuthenticator.getJWTToken(email, password);
   const userAttributes = await apiAuthenticator.getUserAttributes(email, password);
   const wallet = await AkordWallet.importFromEncBackupPhrase(password, userAttributes["custom:encBackupPhrase"]);
@@ -90,7 +72,7 @@ async function signupHandler(argv: {
 
   const wallet = await AkordWallet.create(password);
 
-  const apiAuthenticator = new ApiAuthenticator(config);
+  const apiAuthenticator = new ApiAuthenticator();
   await apiAuthenticator.signup(email, password, {
     email,
     "custom:encBackupPhrase": wallet.encBackupPhrase,
@@ -105,41 +87,6 @@ async function signupHandler(argv: {
   console.log("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
 }
-
-async function walletGenerateHandler() {
-  // console.log("Please be patient, generating the wallet may take a while");
-  // const wallet = await MnemonicWallet.create();
-  // storeWallet(JSON.stringify({
-  //   "jwk": wallet.wallet,
-  //   "mnemonic": wallet.backupPhrase
-  // }));
-  // const address = await wallet.getAddress();
-  // const publicKey = wallet.publicKey();
-  // const signingPublicKey = wallet.signingPublicKey();
-  // console.log("Your wallet was generated & stored successfully at: ~/.akord");
-  // console.log("Your wallet address: " + address);
-  // console.log("Your wallet public key: " + publicKey);
-  // console.log("Your wallet signing public key: " + signingPublicKey);
-  // console.log("The seed phrase to recover the wallet: " + wallet.backupPhrase);
-  // console.log("Please keep it somewhere safe.");
-  // process.exit(0);
-};
-
-async function walletRecoverHandler(argv: { mnemonic: string }) {
-  const mnemonic = argv.mnemonic;
-  console.log("Please be patient, recovering the wallet may take a while");
-  const wallet = await AkordWallet.importFromBackupPhrase(mnemonic);
-  storeWallet(JSON.stringify({
-    "mnemonic": wallet.backupPhrase
-  }));
-  const address = await wallet.getAddress();
-  const publicKey = await wallet.publicKey();
-  const signingPublicKey = await wallet.signingPublicKey();
-  console.log("Your wallet address: " + address);
-  console.log("Your wallet public key: " + publicKey);
-  console.log("Your wallet signing public key: " + signingPublicKey);
-  process.exit(0);
-};
 
 async function vaultCreateHandler(argv: {
   name: string,
@@ -583,10 +530,6 @@ export {
   membershipRejectHandler,
   loginHandler,
   signupHandler,
-  walletGenerateHandler,
-  walletImportHandler,
-  walletRecoverHandler,
-  configureHandler,
   vaultListHandler,
   vaultShowHandler,
   stackListHandler,

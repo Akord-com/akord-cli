@@ -1,14 +1,11 @@
 import 'cross-fetch/polyfill';
 import * as AmazonCognitoIdentity from 'amazon-cognito-identity-js';
-import { ClientConfig } from "./client-config";
-import { awsConfig, AWSConfig } from "./aws-config";
+
+const aws_user_pools_id ="eu-central-1_glTrP1Kin";
+const aws_user_pools_web_client_id = "7u2a1pf5i6shfo7enci6bagk7u";
 
 export default class ApiAuthenticator {
-  public config!: AWSConfig;
-
-  constructor(config: ClientConfig) {
-    this.config = awsConfig(config.env);
-  }
+  constructor() {}
 
   public getCognitoUser(username: string): AmazonCognitoIdentity.CognitoUser {
     const userPool = this.getCognitoUserPool();
@@ -22,8 +19,8 @@ export default class ApiAuthenticator {
 
   public getCognitoUserPool(): AmazonCognitoIdentity.CognitoUserPool {
     const poolData = {
-      UserPoolId: this.config.aws_user_pools_id,
-      ClientId: this.config.aws_user_pools_web_client_id
+      UserPoolId: aws_user_pools_id,
+      ClientId: aws_user_pools_web_client_id
     };
     const userPool = new AmazonCognitoIdentity.CognitoUserPool(poolData);
     return userPool;

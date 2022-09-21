@@ -1,46 +1,20 @@
 # akord-cli
-Akord Command Line Interface - simply interact with the [Akord Vault Protocol](https://github.com/Akord-com/akord-protocol/blob/main/PROTOCOL_SPECIFICATION.md) from the terminal.
+Akord Command Line Interface - simply interact with Akord from the terminal.
 
 The CLI is a set of Akord commands for creating vaults, adding members, creating new stacks, etc.\
 The CLI uses [Akord Client](https://www.npmjs.com/package/@akord/akord-js) to create the encryption context and handle transaction formatting.\
-Each command is an interaction with the Akord Vault Protocol.\
-For each AVP interaction, a reward is distributed to the randomly selected $AKRD [Profit Sharing Token](https://github.com/Akord-com/akord-pst/) holder.
-
-### Disclaimer
-This is an Early Adopter Release of Akord CLI - working with Development version of Akord APIs - use it at your own risk ;)\
-Production version is coming soon.
+Each command is an interaction with the Akord Vault Protocol.
 
 ## Getting started
-### Install the CLI
+### Installation
+> requires Node.js 16
 ```
 yarn global add @akord/akord-cli
 ```
-locally
-```
-yarn install
-yarn build
-yarn local
-```
-### Interact with Akord API
+### Usage
 First configure the CLI with your Akord account
 ```
 akord login <email>
-```
-Now let's create our first vault and upload our first file to a folder by following these few simple steps
-```
-akord vault:create "my first vault"
-akord folder:create <vaultId> "my first folder"
-akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
-```
-
-### Interact directly with Arweave without Akord API
-First configure the CLI with your wallet JSON keyfile
-```
-akord wallet:configure <path-to-wallet-keyfile>
-```
-or generate a new wallet
-```
-akord wallet:generate
 ```
 Now let's create our first vault and upload our first file to a folder by following these few simple steps
 ```
@@ -62,12 +36,7 @@ akord <command>
 Commands:
   akord login <email>                       login & import the Akord wallet
   akord signup <email>                      signup & generate the Akord wallet
-  akord configure <env>                     configure the CLI
-  akord wallet:recover <mnemonic>           recover the wallet from the mnemonic
-  akord wallet:generate                     generate a new wallet & configure
-                                            the CLI
-  akord wallet:import <key-file>            configure the wallet with the JSON
-                                            keyfile
+
   akord vault:create <name> [terms]         create a new vault
   akord vault:rename <vaultId> <name>       update vault name
   akord vault:archive <vaultId>             archive the vault
@@ -100,7 +69,24 @@ Commands:
                                             or leave the vault
   akord membership:revoke <membershipId>    revoke the membership
 
+  akord vault:list                          list all vaults
+  akord vault:show <vaultId>                show vault content
+  akord stack:list <vaultId>                list all stacks within the given
+                                            vault
+  akord stack:show <stackId>                show stack content
+  akord folder:list <vaultId>               list all folders within the given
+                                            vault
+  akord folder:show <stackId>               show folder content
+  akord stack:download <stackId>            download latest file stack version
+
 Options:
   --version  Show version number                                       [boolean]
   --help     Show help                                                 [boolean]
+```
+
+## Development
+```
+yarn install
+yarn build
+yarn local
 ```

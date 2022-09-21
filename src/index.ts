@@ -27,10 +27,6 @@ import {
   membershipRejectHandler,
   loginHandler,
   signupHandler,
-  walletGenerateHandler,
-  walletImportHandler,
-  walletRecoverHandler,
-  configureHandler,
   vaultListHandler,
   vaultShowHandler,
   stackListHandler,
@@ -71,45 +67,6 @@ const signupCommand = {
       })
   },
   handler: signupHandler,
-};
-
-const configureCommand = {
-  command: 'configure <env>',
-  describe: 'configure the CLI',
-  builder: () => {
-    yargs
-      .positional('env', { describe: 'choose the environment', choices: ['mainnet', 'testnet', 'local'] })
-  },
-  handler: configureHandler,
-};
-
-const walletGenerateCommand = {
-  command: 'wallet:generate',
-  describe: 'generate a new wallet & configure the CLI',
-  builder: () => {
-    yargs
-  },
-  handler: walletGenerateHandler,
-};
-
-const walletImportCommand = {
-  command: 'wallet:import <key-file>',
-  describe: 'configure the wallet with the JSON keyfile',
-  builder: () => {
-    yargs
-      .positional('key-file', { describe: 'path to the JSON wallet key file' })
-  },
-  handler: walletImportHandler,
-};
-
-const walletRecoverCommand = {
-  command: 'wallet:recover <mnemonic>',
-  describe: 'recover the wallet from the mnemonic',
-  builder: () => {
-    yargs
-      .positional('mnemonic', { describe: '12-word seed phrase' })
-  },
-  handler: walletRecoverHandler,
 };
 
 const vaultCreateCommand = {
@@ -451,10 +408,6 @@ const stackDownloadCommand = {
 yargs
   .command(<CommandModule><unknown>loginCommand)
   .command(<CommandModule><unknown>signupCommand)
-  .command(<CommandModule><unknown>configureCommand)
-  .command(<CommandModule><unknown>walletRecoverCommand)
-  .command(<CommandModule><unknown>walletGenerateCommand)
-  .command(<CommandModule><unknown>walletImportCommand)
   .command(<CommandModule><unknown>vaultCreateCommand)
   .command(<CommandModule><unknown>vaultRenameCommand)
   .command(<CommandModule><unknown>vaultArchiveCommand)
