@@ -2,16 +2,21 @@
  * Suppress ExperimentalWarnings
  * Example (node:32288) ExperimentalWarning: buffer.Blob is an experimental feature.
  */
-const { emitWarning } = process;
+const warningListeners = process.listeners('warning');
 
-process.emitWarning = (warning, ...args) => {
-	if (args[0] === 'ExperimentalWarning') {
-		return;
-	}
+if (warningListeners.length != 1) {
+  console.warn(
+    `expected 1 listener on the process "warning" event, saw ${warningListeners.length}`
+  );
+}
 
-	if (args[0] && typeof args[0] === 'object' && args[0].type === 'ExperimentalWarning') {
-		return;
-	}
+if (warningListeners[0]) {
+  const originalWarningListener = warningListeners[0];
+  process.removeAllListeners('warning');
 
-	return emitWarning(warning, ...args);
-};
+  process.prependListener('warning', (warning) => {
+    if (warning.name != 'ExperimentalWarning') {
+      originalWarningListener(warning);
+    }
+  });
+}
