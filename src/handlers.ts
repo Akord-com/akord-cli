@@ -379,17 +379,17 @@ function getFileFromPath(filePath: string) {
 
 async function membershipInviteHandler(argv: {
   vaultId: string,
-  address: string,
+  email: string,
   role?: string,
 }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
-  const address = argv.address;
+  const email = argv.email;
 
   const role = argv.role || (await askForRole()).role;
 
   const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.membershipInvite(vaultId, address, role);
+  const { transactionId } = await akord.membershipInvite(vaultId, email, role);
   displayResponse(transactionId);
   process.exit(0);
 }

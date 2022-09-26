@@ -285,12 +285,12 @@ const folderDeleteCommand = {
 };
 
 const membershipInviteCommand = {
-  command: 'membership:invite <vaultId> <address>',
+  command: 'membership:invite <vaultId> <email>',
   describe: 'invite a new member to the vault',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
-      .positional('address', { describe: 'invitee address' })
+      .positional('email', { describe: 'invitee email address' })
       .option("r", {
         alias: "role",
         describe: "the role for the new member.",

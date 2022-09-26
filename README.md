@@ -63,7 +63,7 @@ Commands:
   akord folder:delete <folderId>            delete the folder
 
   akord membership:invite <vaultId>         invite a new member to the vault
-  <address>
+  <email>
   akord membership:accept <membershipId>    accept the invitation to the vault
   akord membership:reject <membershipId>    reject the invitation to the vault
                                             or leave the vault
