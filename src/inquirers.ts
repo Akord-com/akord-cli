@@ -51,6 +51,26 @@ const askForCode = async (): Promise<{ code: string }> => {
   ]);
 };
 
+const askForTermsOfServiceAndPrivacyPolicy = async (): Promise<{ terms: boolean }> => {
+  return inquirer.prompt([
+    {
+      name: 'terms',
+      type: 'confirm',
+      message: `I have read and agree to the Terms of Service: \nhttps://akord.com/terms-of-service-consumer\n\nand Privacy Policy: \nhttps://akord.com/privacy-policy\n`
+    },
+  ]);
+};
+
+const askForWaiveOfWithdrawalRight = async (): Promise<{ withdrawal: boolean }> => {
+  return inquirer.prompt([
+    {
+      name: 'withdrawal',
+      type: 'confirm',
+      message: `I agree to waive my withdrawal right, if applicable: \nhttps://docs.akord.com/v/app-docs/legal/2022\n`
+    },
+  ]);
+};
+
 const askForUploadType = async () => {
   return inquirer
     .prompt([
@@ -88,5 +108,7 @@ export {
   askForUploadType,
   askForRole,
   askForPassword,
-  askForCode
+  askForCode,
+  askForTermsOfServiceAndPrivacyPolicy,
+  askForWaiveOfWithdrawalRight
 }

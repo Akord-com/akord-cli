@@ -7,7 +7,9 @@ import {
   askForUploadType,
   askForRole,
   askForPassword,
-  askForCode
+  askForCode,
+  askForWaiveOfWithdrawalRight,
+  askForTermsOfServiceAndPrivacyPolicy
 } from "./inquirers";
 import os from 'os';
 import Akord from "@akord/akord-js"
@@ -68,6 +70,14 @@ async function signupHandler(argv: {
 
   if (!password) {
     password = (await askForPassword()).password;
+  }
+
+  if (!(await askForTermsOfServiceAndPrivacyPolicy()).terms) {
+    process.exit(0);
+  }
+
+  if (!(await askForWaiveOfWithdrawalRight()).withdrawal) {
+    process.exit(0);
   }
 
   const wallet = await AkordWallet.create(password);
