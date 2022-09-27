@@ -76,7 +76,7 @@ Commands:
   akord stack:show <stackId>                show stack content
   akord folder:list <vaultId>               list all folders within the given
                                             vault
-  akord folder:show <stackId>               show folder content
+  akord folder:show <folderId>              show folder content
   akord stack:download <stackId>            download latest file stack version
 
 Options:
