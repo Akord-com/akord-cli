@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 
 import yargs, { CommandModule } from 'yargs';
-import figlet from 'figlet';
 import {
   vaultCreateHandler,
   vaultRenameHandler,
@@ -36,10 +35,6 @@ import {
   stackDownloadHandler
 } from './handlers';
 import './polyfill'
-
-console.log(
-  figlet.textSync('Akord', { horizontalLayout: 'full' })
-);
 
 const loginCommand = {
   command: 'login <email>',
@@ -440,3 +435,4 @@ yargs
   .demandCommand()
   .help()
   .argv;
+  

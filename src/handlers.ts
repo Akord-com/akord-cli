@@ -16,6 +16,7 @@ import Akord from "@akord/akord-js"
 import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
 import ApiAuthenticator from "./api-authenticator";
 import { randomUUID } from 'crypto';
+import figlet from 'figlet';
 
 export function initInstance(config: any, wallet: Wallet, jwtToken: string) {
   return new Akord(config, wallet, jwtToken);
@@ -37,6 +38,9 @@ async function loginHandler(argv: {
   email: string,
   password?: string
 }) {
+  console.log(
+    figlet.textSync('Akord', { horizontalLayout: 'full' })
+  );
   const email = argv.email;
   let password = argv.password;
 
@@ -65,6 +69,10 @@ async function signupHandler(argv: {
   email: string,
   password?: string
 }) {
+  console.log(
+    figlet.textSync('Akord', { horizontalLayout: 'full' })
+  );
+  
   const email = argv.email;
   let password = argv.password;
 
