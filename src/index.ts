@@ -363,7 +363,7 @@ const folderListCommand = {
 };
 
 const folderShowCommand = {
-  command: 'folder:show <stackId>',
+  command: 'folder:show <folderId>',
   describe: 'show folder content',
   builder: () => {
     yargs
