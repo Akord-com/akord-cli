@@ -13,8 +13,7 @@ import {
 } from "./inquirers";
 import os from 'os';
 import Akord from "@akord/akord-js"
-import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
-import ApiAuthenticator from "./api-authenticator";
+import { WalletType, Wallet, WalletFactory } from "@akord/crypto";
 import { randomUUID } from 'crypto';
 import figlet from 'figlet';
 
@@ -43,21 +42,15 @@ async function loginHandler(argv: {
   if (!password) {
     password = (await askForPassword()).password;
   }
-  const apiAuthenticator = new ApiAuthenticator();
-  const jwtToken = await apiAuthenticator.getJWTToken(email, password);
-  const userAttributes = await apiAuthenticator.getUserAttributes(email, password);
-  const wallet = await AkordWallet.importFromEncBackupPhrase(password, userAttributes["custom:encBackupPhrase"]);
+  const { wallet, jwtToken } = await Akord.auth.signIn(email, password);
 
   storeWallet(JSON.stringify({
     "mnemonic": wallet.backupPhrase,
     "jwtToken": jwtToken
   }));
-  const address = await wallet.getAddress();
-  const publicKey = await wallet.publicKey();
-  const signingPublicKey = await wallet.signingPublicKey();
-  console.log("Your wallet address: " + address);
-  console.log("Your wallet public key: " + publicKey);
-  console.log("Your wallet signing public key: " + signingPublicKey);
+  console.log("Your wallet address: " + await wallet.getAddress());
+  console.log("Your wallet public key: " + await wallet.publicKey());
+  console.log("Your wallet signing public key: " + await wallet.signingPublicKey());
   process.exit(0);
 }
 
@@ -68,7 +61,7 @@ async function signupHandler(argv: {
   console.log(
     figlet.textSync('Akord', { horizontalLayout: 'full' })
   );
-  
+
   const email = argv.email;
   let password = argv.password;
 
@@ -84,20 +77,11 @@ async function signupHandler(argv: {
     process.exit(0);
   }
 
-  const wallet = await AkordWallet.create(password);
+  await Akord.auth.signUp(email, password, { clientType: "CLI" });
 
-  const apiAuthenticator = new ApiAuthenticator();
-  await apiAuthenticator.signup(email, password, {
-    email,
-    "custom:encBackupPhrase": wallet.encBackupPhrase,
-    "custom:publicKey": await wallet.publicKey(),
-    "custom:publicSigningKey": await wallet.signingPublicKey(),
-    "custom:mode": "dark",
-    "custom:notifications": "true",
-  });
   console.log("Your account was successfully created. We have sent you the verification code.");
   const code = (await askForCode()).code;
-  await apiAuthenticator.verifyAccount(email, code);
+  await Akord.auth.verifyAccount(email, code);
   console.log("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
 }
