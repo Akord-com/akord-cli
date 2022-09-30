@@ -13,14 +13,9 @@ import {
 } from "./inquirers";
 import os from 'os';
 import Akord from "@akord/akord-js"
-import { WalletType, Wallet, AkordWallet, WalletFactory } from "@akord/crypto"
-import ApiAuthenticator from "./api-authenticator";
+import { WalletType, Wallet, WalletFactory } from "@akord/crypto";
 import { randomUUID } from 'crypto';
 import figlet from 'figlet';
-
-export function initInstance(config: any, wallet: Wallet, jwtToken: string) {
-  return new Akord(config, wallet, jwtToken);
-}
 
 let config = {};
 
@@ -47,21 +42,15 @@ async function loginHandler(argv: {
   if (!password) {
     password = (await askForPassword()).password;
   }
-  const apiAuthenticator = new ApiAuthenticator();
-  const jwtToken = await apiAuthenticator.getJWTToken(email, password);
-  const userAttributes = await apiAuthenticator.getUserAttributes(email, password);
-  const wallet = await AkordWallet.importFromEncBackupPhrase(password, userAttributes["custom:encBackupPhrase"]);
+  const { wallet, jwtToken } = await Akord.auth.signIn(email, password);
 
   storeWallet(JSON.stringify({
     "mnemonic": wallet.backupPhrase,
     "jwtToken": jwtToken
   }));
-  const address = await wallet.getAddress();
-  const publicKey = await wallet.publicKey();
-  const signingPublicKey = await wallet.signingPublicKey();
-  console.log("Your wallet address: " + address);
-  console.log("Your wallet public key: " + publicKey);
-  console.log("Your wallet signing public key: " + signingPublicKey);
+  console.log("Your wallet address: " + await wallet.getAddress());
+  console.log("Your wallet public key: " + await wallet.publicKey());
+  console.log("Your wallet signing public key: " + await wallet.signingPublicKey());
   process.exit(0);
 }
 
@@ -72,7 +61,7 @@ async function signupHandler(argv: {
   console.log(
     figlet.textSync('Akord', { horizontalLayout: 'full' })
   );
-  
+
   const email = argv.email;
   let password = argv.password;
 
@@ -88,20 +77,11 @@ async function signupHandler(argv: {
     process.exit(0);
   }
 
-  const wallet = await AkordWallet.create(password);
+  await Akord.auth.signUp(email, password, { clientType: "CLI" });
 
-  const apiAuthenticator = new ApiAuthenticator();
-  await apiAuthenticator.signup(email, password, {
-    email,
-    "custom:encBackupPhrase": wallet.encBackupPhrase,
-    "custom:publicKey": await wallet.publicKey(),
-    "custom:publicSigningKey": await wallet.signingPublicKey(),
-    "custom:mode": "dark",
-    "custom:notifications": "true",
-  });
   console.log("Your account was successfully created. We have sent you the verification code.");
   const code = (await askForCode()).code;
-  await apiAuthenticator.verifyAccount(email, code);
+  await Akord.auth.verifyAccount(email, code);
   console.log("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
 }
@@ -114,8 +94,8 @@ async function vaultCreateHandler(argv: {
   const name = argv.name;
   const termsOfAccess = argv.termsOfAccess;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { vaultId, transactionId } = await akord.vaultCreate(name, termsOfAccess);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { vaultId, transactionId } = await akord.vault.create(name, termsOfAccess);
   console.log("Vault successfully created with id: " + vaultId);
   displayResponse(transactionId);
   process.exit(0);
@@ -154,8 +134,8 @@ async function vaultRenameHandler(argv: {
   const vaultId = argv.vaultId;
   const name = argv.name;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.vaultRename(vaultId, name);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.vault.rename(vaultId, name);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -164,8 +144,8 @@ async function vaultArchiveHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.vaultArchive(vaultId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.vault.archive(vaultId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -174,8 +154,8 @@ async function vaultRestoreHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.vaultRestore(vaultId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.vault.restore(vaultId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -191,8 +171,8 @@ async function stackCreateHandler(argv: {
   const file = <any>(await _getFile(argv));
   const name = argv.name || file.name || (await askForStackName(file.name)).name;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { stackId, transactionId } = await akord.stackCreate(vaultId, file, name, parentId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { stackId, transactionId } = await akord.stack.create(vaultId, file, name, parentId);
   console.log("Stack successfully created with id: " + stackId);
   displayResponse(transactionId);
   process.exit(0);
@@ -203,8 +183,8 @@ async function stackUploadRevisionHandler(argv: { stackId: string }) {
   const stackId = argv.stackId;
   const file = await _getFile(argv);
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackUploadRevision(stackId, file);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.uploadRevision(stackId, file);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -242,8 +222,8 @@ async function stackRenameHandler(argv: {
   const stackId = argv.stackId;
   const name = argv.name;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackRename(stackId, name);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.rename(stackId, name);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -252,8 +232,8 @@ async function stackRevokeHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackRevoke(stackId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.revoke(stackId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -262,8 +242,8 @@ async function stackRestoreHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackRestore(stackId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.restore(stackId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -272,8 +252,8 @@ async function stackDeleteHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackDelete(stackId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.delete(stackId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -286,8 +266,8 @@ async function stackMoveHandler(argv: {
   const stackId = argv.stackId;
   const parentId = argv.parentId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.stackMove(stackId, parentId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.stack.move(stackId, parentId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -300,8 +280,8 @@ async function memoCreateHandler(argv: {
   const vaultId = argv.vaultId;
   const message = argv.message;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { memoId, transactionId } = await akord.memoCreate(vaultId, message);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { memoId, transactionId } = await akord.memo.create(vaultId, message);
   console.log("Memo successfully created with id: " + memoId);
   displayResponse(transactionId);
   process.exit(0);
@@ -317,8 +297,8 @@ async function folderCreateHandler(argv: {
   const parentId = argv.parentId;
   const name = argv.name;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { folderId, transactionId } = await akord.folderCreate(vaultId, name, parentId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { folderId, transactionId } = await akord.folder.create(vaultId, name, parentId);
   console.log("Folder successfully created with id: " + folderId);
   displayResponse(transactionId);
   process.exit(0);
@@ -332,8 +312,8 @@ async function folderRenameHandler(argv: {
   const folderId = argv.folderId;
   const name = argv.name;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.folderRename(folderId, name);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.folder.rename(folderId, name);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -346,8 +326,8 @@ async function folderMoveHandler(argv: {
   const folderId = argv.folderId;
   const parentId = argv.parentId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.folderMove(folderId, parentId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.folder.move(folderId, parentId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -356,8 +336,8 @@ async function folderRevokeHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.folderRevoke(folderId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.folder.revoke(folderId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -366,8 +346,8 @@ async function folderRestoreHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.folderRestore(folderId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.folder.restore(folderId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -376,8 +356,8 @@ async function folderDeleteHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.folderDelete(folderId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.folder.delete(folderId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -406,8 +386,8 @@ async function membershipInviteHandler(argv: {
 
   const role = argv.role || (await askForRole()).role;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.membershipInvite(vaultId, email, role);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.membership.invite(vaultId, email, role);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -416,8 +396,8 @@ async function membershipAcceptHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.membershipAccept(membershipId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.membership.accept(membershipId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -426,8 +406,8 @@ async function membershipRejectHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.membershipReject(membershipId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.membership.reject(membershipId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -436,8 +416,8 @@ async function membershipRevokeHandler(argv: { membershipId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const membershipId = argv.membershipId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const { transactionId } = await akord.membershipRevoke(membershipId);
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { transactionId } = await akord.membership.revoke(membershipId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -445,7 +425,7 @@ async function membershipRevokeHandler(argv: { membershipId: string }) {
 async function vaultListHandler() {
   const { wallet, jwtToken } = await loadCredentials();
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.getVaults();
   console.table(response);
   process.exit(0);
@@ -455,7 +435,7 @@ async function vaultShowHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.decryptNode(vaultId, "Vault", vaultId);
   console.log(response);
   process.exit(0);
@@ -465,7 +445,7 @@ async function stackListHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.getNodes(vaultId, "Stack");
   console.table(response);
   process.exit(0);
@@ -475,7 +455,7 @@ async function folderListHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.getNodes(vaultId, "Folder");
   console.table(response);
   process.exit(0);
@@ -485,7 +465,7 @@ async function folderShowHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.decryptNode(folderId, "Folder");
   console.log(response);
   process.exit(0);
@@ -495,7 +475,7 @@ async function stackShowHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
-  const akord = await Akord.init(config, wallet, jwtToken);
+  const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.decryptNode(stackId, "Stack");
   console.log(response);
   process.exit(0);
@@ -511,14 +491,15 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     console.error("File within the given path already exist, please choose a different path and try again.");
     process.exit(0);
   }
-
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { name, data } = await akord.getStackFile(stackId, version);
   if (!filePath) {
-    filePath = process.cwd() + "/" + randomUUID();
+    filePath = process.cwd() + "/" + name;
+    if (fs.existsSync(filePath)) {
+      filePath = process.cwd() + "/" + randomUUID() + "-" + name;
+    }
   }
-
-  const akord = await Akord.init(config, wallet, jwtToken);
-  const file = await akord.getStackFile(stackId, version);
-  fs.writeFileSync(filePath, Buffer.from(file));
+  fs.writeFileSync(filePath, Buffer.from(data));
   console.error("The file was successfully downloaded, decrypted & stored in: " + filePath);
   process.exit(0);
 }
