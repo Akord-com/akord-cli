@@ -491,14 +491,15 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     console.error("File within the given path already exist, please choose a different path and try again.");
     process.exit(0);
   }
-
-  if (!filePath) {
-    filePath = process.cwd() + "/" + randomUUID();
-  }
-
   const akord = await Akord.init(wallet, jwtToken, config);
-  const file = await akord.getStackFile(stackId, version);
-  fs.writeFileSync(filePath, Buffer.from(file));
+  const { name, data } = await akord.getStackFile(stackId, version);
+  if (!filePath) {
+    filePath = process.cwd() + "/" + name;
+    if (fs.existsSync(filePath)) {
+      filePath = process.cwd() + "/" + randomUUID() + "-" + name;
+    }
+  }
+  fs.writeFileSync(filePath, Buffer.from(data));
   console.error("The file was successfully downloaded, decrypted & stored in: " + filePath);
   process.exit(0);
 }
