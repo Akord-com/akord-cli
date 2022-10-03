@@ -12,7 +12,7 @@ import {
   askForTermsOfServiceAndPrivacyPolicy
 } from "./inquirers";
 import os from 'os';
-import Akord from "@akord/akord-js"
+import { Akord } from "@akord/akord-js"
 import { WalletType, Wallet, WalletFactory } from "@akord/crypto";
 import { randomUUID } from 'crypto';
 import figlet from 'figlet';

@@ -2,12 +2,13 @@
 # yarn lockfile v1
 
 
-"@akord/akord-js@^1.0.6":
-  version "1.0.6"
-  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-1.0.6.tgz#cd1a49e3be3992c1c7743df1324b5eeff87cd653"
-  integrity sha512-hZ/QTSGLWLUtVV4Upt8WpUmZXYBC7M7w7xsT1SZaP+qbteMS+igQCaRakb930CU7usOhJNaGRu9E6i5bhvFHvw==
+"@akord/akord-js@^1.2.0":
+  version "1.2.2"
+  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-1.2.2.tgz#a22cfa8d32820f8747af901576623d1d41f99139"
+  integrity sha512-S9inamH7FJgL27EFaLB/x/rdvsCtzmkm9dg3X+jatM+4b0cpWeYX09hpMfRH9djhQOrjHPgUbWDXUvxZYatWKg==
   dependencies:
     "@akord/crypto" "0.0.43"
+    "@akord/ts-cacheable" "^1.0.7"
     amazon-cognito-identity-js "^5.2.8"
     arweave "1.11.4"
     aws-appsync "^4.1.5"
@@ -20,6 +21,7 @@
     lodash "^4.17.21"
     mime-types "^2.1.35"
     pdfjs-dist "^2.16.105"
+    rxjs "^7.5.6"
     uuid "^8.3.2"
     warp-contracts "1.2.4"
 
@@ -34,6 +36,13 @@
     libsodium-wrappers "^0.7.9"
     reflect-metadata "^0.1.13"
     tweetnacl "^1.0.3"
+
+"@akord/ts-cacheable@^1.0.7":
+  version "1.0.7"
+  resolved "https://registry.yarnpkg.com/@akord/ts-cacheable/-/ts-cacheable-1.0.7.tgz#cc006855cfcba3d35e3aaa7448d5db46bd13638c"
+  integrity sha512-YtmKTMjhy8X7ZVfVOnzXj4uL+955ajCrkAZkR5F629t3AQnzgvDomOHnBYMCFbUx1t5Qxzo9b2KmIS5/i7KTvA==
+  dependencies:
+    rxjs "^7.5.6"
 
 "@ampproject/remapping@^2.1.0":
   version "2.2.0"
@@ -5970,7 +5979,7 @@ run-parallel-limit@^1.1.0:
   dependencies:
     queue-microtask "^1.2.2"
 
-rxjs@^7.5.5:
+rxjs@^7.5.5, rxjs@^7.5.6:
   version "7.5.7"
   resolved "https://registry.yarnpkg.com/rxjs/-/rxjs-7.5.7.tgz#2ec0d57fdc89ece220d2e702730ae8f1e49def39"
   integrity sha512-z9MzKh/UcOqB3i20H6rtrlaE/CgjLOvheWK/9ILrbhROGTweAi1BaFsTT9FbwZi5Trr1qNRs+MXkhmR06awzQA==
