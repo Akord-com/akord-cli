@@ -13,9 +13,13 @@ import {
 } from "./inquirers";
 import os from 'os';
 import { Akord } from "@akord/akord-js"
-import { WalletType, Wallet, WalletFactory } from "@akord/crypto";
-import { randomUUID } from 'crypto';
-import figlet from 'figlet';
+import { WalletType, Wallet, WalletFactory, AkordWallet } from "@akord/crypto";
+import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
+import figlet from "figlet";
+import { promisify } from "util";
+import * as keytar from "keytar";
+
+const pbkdf2 = promisify(pbkdf2Cb);
 
 let config = {};
 
@@ -29,13 +33,94 @@ function storeWallet(walletData) {
   }
 }
 
+type StoredWallet = {
+  mnemonic: string;
+  jwtToken: string;
+};
+
+type BasePBKDF2Settings = {
+  algorithm: string;
+  iterations: number;
+};
+
+type PBKDF2Settings = BasePBKDF2Settings & {
+  salt: Buffer;
+};
+
+type StoredPBKDF2Settings = BasePBKDF2Settings & {
+  salt: string;
+};
+
+
+type StoredEncryptedWallet = {
+  encryptedWallet: string;
+  pbkdf2: StoredPBKDF2Settings;
+  aes: {
+    algorithm: CipherGCMTypes;
+    iv: string;
+    authTag: string;
+  };
+};
+
+function deriveKey(password: string, pbkdf2Settings: PBKDF2Settings, length: number = 32): Promise<Buffer> {
+  return pbkdf2(
+    password,
+    pbkdf2Settings.salt,
+    pbkdf2Settings.iterations,
+    length,
+    pbkdf2Settings.algorithm
+  );
+}
+
+async function encryptWallet(password: string, storedWallet: StoredWallet): Promise<StoredEncryptedWallet> {
+  const toEncrypt = JSON.stringify(storedWallet);
+
+  const pbkdf2Settings = {
+    algorithm: "sha256",
+    salt: randomBytes(12),
+    iterations: 100_000,
+  };
+  const key = await deriveKey(password, pbkdf2Settings);
+
+  const iv = randomBytes(16);
+  const aesAlgorithm = "aes-256-gcm";
+  const cipher = createCipheriv(aesAlgorithm, key, iv);
+
+  let encryptedWallet = cipher.update(toEncrypt, "utf8", "base64");
+  encryptedWallet += cipher.final("base64")
+  const authTag = cipher.getAuthTag().toString("base64");
+  return {
+    encryptedWallet,
+    pbkdf2: { ...pbkdf2Settings, salt: pbkdf2Settings.salt.toString("base64") },
+    aes: { algorithm: aesAlgorithm, iv: iv.toString("base64"), authTag },
+  };
+}
+
+async function decryptWallet(password: string, storedEncryptedWallet: StoredEncryptedWallet): Promise<StoredEncryptedWallet> {
+  const key = await pbkdf2(
+    password,
+    Buffer.from(storedEncryptedWallet.pbkdf2.salt, "base64"),
+    storedEncryptedWallet.pbkdf2.iterations,
+    32,
+    storedEncryptedWallet.pbkdf2.algorithm
+  );
+
+  const decipher = createDecipheriv(
+    storedEncryptedWallet.aes.algorithm,
+    key,
+    Buffer.from(storedEncryptedWallet.aes.iv, "base64")
+  )
+  let decryptedWallet = decipher.update(storedEncryptedWallet.encryptedWallet, "base64", "utf8");
+  decryptedWallet += decipher.final("base64");
+  return JSON.parse(decryptedWallet);
+}
+
+
 async function loginHandler(argv: {
   email: string,
   password?: string
 }) {
-  console.log(
-    figlet.textSync('Akord', { horizontalLayout: 'full' })
-  );
+  console.log(figlet.textSync("Akord", { horizontalLayout: "full" }));
   const email = argv.email;
   let password = argv.password;
 
@@ -43,11 +128,9 @@ async function loginHandler(argv: {
     password = (await askForPassword()).password;
   }
   const { wallet, jwtToken } = await Akord.auth.signIn(email, password);
+  const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, jwtToken });
+  storeWallet(JSON.stringify(encryptedWallet));
 
-  storeWallet(JSON.stringify({
-    "mnemonic": wallet.backupPhrase,
-    "jwtToken": jwtToken
-  }));
   console.log("Your wallet address: " + await wallet.getAddress());
   console.log("Your wallet public key: " + await wallet.publicKey());
   console.log("Your wallet signing public key: " + await wallet.signingPublicKey());
@@ -106,14 +189,54 @@ function displayResponse(transactionId: string) {
   console.log("https://sonar.warp.cc/#/app/interaction/" + transactionId);
 }
 
+async function retrievePassword(): Promise<string> {
+  const service = "akord";
+  const account = "default";
+
+  let password: string;
+
+  try {
+    password = await keytar.getPassword(service, account);
+  } catch (err) {}
+
+  if (password) {
+    return password;
+  }
+
+  password = (await askForPassword()).password;
+
+  try {
+    await keytar.setPassword(service, account, password);
+  } catch (err) {}
+
+  return password;
+}
+
+async function readEncryptedConfig(config: StoredEncryptedWallet): Promise<StoredWallet> {
+  const password = await retrievePassword();
+  const iv = Buffer.from(config.aes.iv, "base64");
+  const pbkdf2Settings = { ...config.pbkdf2, salt: Buffer.from(config.pbkdf2.salt, "base64") };
+  const key = await deriveKey(password, pbkdf2Settings);
+  const decipher = createDecipheriv(config.aes.algorithm, key, iv);
+  decipher.setAuthTag(Buffer.from(config.aes.authTag, "base64"));
+  let rawConfig = decipher.update(config.encryptedWallet, "base64", "utf8");
+  rawConfig += decipher.final("utf8");
+  return JSON.parse(rawConfig);
+}
+
 async function loadCredentials(): Promise<{ wallet: Wallet, jwtToken: string }> {
   let wallet = {} as Wallet;
   let jwtToken = null;
   try {
-    const config = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
+    let config = JSON.parse(fs.readFileSync(os.homedir() + "/.akord").toString());
+
+    if (config.encryptedWallet) {
+      config = await readEncryptedConfig(config);
+    }
+
     if (config.mnemonic) {
       wallet = new WalletFactory(WalletType.Akord, config.mnemonic).walletInstance();
-      await (<any>wallet).deriveKeys();
+      await (<AkordWallet>wallet).deriveKeys();
       jwtToken = config.jwtToken
     } else {
       wallet = new WalletFactory(WalletType.Arweave, config.jwk).walletInstance();
