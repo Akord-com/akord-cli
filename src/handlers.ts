@@ -549,17 +549,17 @@ async function vaultListHandler() {
   const { wallet, jwtToken } = await loadCredentials();
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.getVaults();
+  const response = await akord.vault.list();
   console.table(response);
   process.exit(0);
 }
 
-async function vaultShowHandler(argv: { vaultId: string }) {
+async function vaultGetHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.decryptNode(vaultId, "Vault", vaultId);
+  const response = await akord.vault.get(vaultId);
   console.log(response);
   process.exit(0);
 }
@@ -569,7 +569,7 @@ async function stackListHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.getNodes(vaultId, "Stack");
+  const response = await akord.stack.list(vaultId);
   console.table(response);
   process.exit(0);
 }
@@ -579,28 +579,46 @@ async function folderListHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.getNodes(vaultId, "Folder");
+  const response = await akord.folder.list(vaultId);
   console.table(response);
   process.exit(0);
 }
 
-async function folderShowHandler(argv: { folderId: string }) {
+async function folderGetHandler(argv: { folderId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const folderId = argv.folderId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.decryptNode(folderId, "Folder");
+  const response = await akord.folder.get(folderId);
   console.log(response);
   process.exit(0);
 }
 
-async function stackShowHandler(argv: { stackId: string }) {
+async function stackGetHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.decryptNode(stackId, "Stack");
+  const response = await akord.stack.get(stackId);
   console.log(response);
+  process.exit(0);
+}
+
+async function membershipListHandler(argv: { vaultId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const vaultId = argv.vaultId;
+
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const response = await akord.membership.list(vaultId);
+  const members = response.map((membership: any) => {
+    return { 
+      id: membership.id,
+      status: membership.status,
+      role: membership.role,
+      email: membership.memberDetails.email,
+    }
+  })
+  console.table(members);
   process.exit(0);
 }
 
@@ -615,7 +633,7 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     process.exit(0);
   }
   const akord = await Akord.init(wallet, jwtToken, config);
-  const { name, data } = await akord.getStackFile(stackId, version);
+  const { name, data } = await akord.stack.getFile(stackId, version);
   if (!filePath) {
     filePath = process.cwd() + "/" + name;
     if (fs.existsSync(filePath)) {
@@ -653,10 +671,11 @@ export {
   loginHandler,
   signupHandler,
   vaultListHandler,
-  vaultShowHandler,
+  vaultGetHandler,
   stackListHandler,
-  stackShowHandler,
+  stackGetHandler,
   folderListHandler,
-  folderShowHandler,
+  folderGetHandler,
+  membershipListHandler,
   stackDownloadHandler
 }
