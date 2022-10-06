@@ -27,11 +27,12 @@ import {
   loginHandler,
   signupHandler,
   vaultListHandler,
-  vaultShowHandler,
+  vaultGetHandler,
+  membershipListHandler,
   stackListHandler,
-  stackShowHandler,
+  stackGetHandler,
   folderListHandler,
-  folderShowHandler,
+  folderGetHandler,
   stackDownloadHandler
 } from './handlers';
 import './polyfill'
@@ -327,19 +328,19 @@ const membershipRevokeCommand = {
 
 const vaultListCommand = {
   command: 'vault:list',
-  describe: 'list all vaults',
+  describe: 'list all user vaults',
   builder: () => { },
   handler: vaultListHandler,
 };
 
-const vaultShowCommand = {
-  command: 'vault:show <vaultId>',
-  describe: 'show vault content',
+const vaultGetCommand = {
+  command: 'vault:get <vaultId>',
+  describe: 'get vault by id',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
   },
-  handler: vaultShowHandler,
+  handler: vaultGetHandler,
 };
 
 const stackListCommand = {
@@ -362,24 +363,34 @@ const folderListCommand = {
   handler: folderListHandler,
 };
 
-const folderShowCommand = {
-  command: 'folder:show <folderId>',
-  describe: 'show folder content',
+const folderGetCommand = {
+  command: 'folder:get <folderId>',
+  describe: 'get folder by id',
   builder: () => {
     yargs
       .positional('folderId', { describe: 'folder id' })
   },
-  handler: folderShowHandler,
+  handler: folderGetHandler,
 };
 
-const stackShowCommand = {
-  command: 'stack:show <stackId>',
-  describe: 'show stack content',
+const stackGetCommand = {
+  command: 'stack:get <stackId>',
+  describe: 'get stack by id',
   builder: () => {
     yargs
       .positional('stackId', { describe: 'stack id' })
   },
-  handler: stackShowHandler,
+  handler: stackGetHandler,
+};
+
+const membershipListCommand = {
+  command: 'membership:list <vaultId>',
+  describe: 'list all active members within the given vault',
+  builder: () => {
+    yargs
+      .positional('membershipId', { describe: 'membership id' })
+  },
+  handler: membershipListHandler,
 };
 
 const stackDownloadCommand = {
@@ -407,6 +418,8 @@ yargs
   .command(<CommandModule><unknown>vaultRenameCommand)
   .command(<CommandModule><unknown>vaultArchiveCommand)
   .command(<CommandModule><unknown>vaultRestoreCommand)
+  .command(<CommandModule><unknown>vaultGetCommand)
+  .command(<CommandModule><unknown>vaultListCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
   .command(<CommandModule><unknown>stackUploadRevisionCommand)
@@ -414,6 +427,9 @@ yargs
   .command(<CommandModule><unknown>stackRevokeCommand)
   .command(<CommandModule><unknown>stackRestoreCommand)
   .command(<CommandModule><unknown>stackDeleteCommand)
+  .command(<CommandModule><unknown>stackGetCommand)
+  .command(<CommandModule><unknown>stackListCommand)
+  .command(<CommandModule><unknown>stackDownloadCommand)
   .command(<CommandModule><unknown>memoCreateCommand)
   .command(<CommandModule><unknown>folderCreateCommand)
   .command(<CommandModule><unknown>folderMoveCommand)
@@ -421,17 +437,13 @@ yargs
   .command(<CommandModule><unknown>folderRevokeCommand)
   .command(<CommandModule><unknown>folderRestoreCommand)
   .command(<CommandModule><unknown>folderDeleteCommand)
+  .command(<CommandModule><unknown>folderGetCommand)
+  .command(<CommandModule><unknown>folderListCommand)
   .command(<CommandModule><unknown>membershipInviteCommand)
   .command(<CommandModule><unknown>membershipAcceptCommand)
   .command(<CommandModule><unknown>membershipRejectCommand)
   .command(<CommandModule><unknown>membershipRevokeCommand)
-  .command(<CommandModule><unknown>vaultListCommand)
-  .command(<CommandModule><unknown>vaultShowCommand)
-  .command(<CommandModule><unknown>stackListCommand)
-  .command(<CommandModule><unknown>stackShowCommand)
-  .command(<CommandModule><unknown>folderListCommand)
-  .command(<CommandModule><unknown>folderShowCommand)
-  .command(<CommandModule><unknown>stackDownloadCommand)
+  .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
   .help()
   .argv;

@@ -2,16 +2,16 @@
 # yarn lockfile v1
 
 
-"@akord/akord-js@^1.2.0":
-  version "1.2.2"
-  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-1.2.2.tgz#a22cfa8d32820f8747af901576623d1d41f99139"
-  integrity sha512-S9inamH7FJgL27EFaLB/x/rdvsCtzmkm9dg3X+jatM+4b0cpWeYX09hpMfRH9djhQOrjHPgUbWDXUvxZYatWKg==
+"@akord/akord-js@^1.4.1":
+  version "1.4.1"
+  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-1.4.1.tgz#58a40180ca482ea2624e4a85247b8a67f85377e3"
+  integrity sha512-R5J5m/4G7zzXfgMY75z5M1BkNNoYFqI9pXJBXodZP8xz5dKBeBi7RxizVzLtf+0j7i1+ly2vN7TCl5339JqeLA==
   dependencies:
     "@akord/crypto" "0.0.43"
     "@akord/ts-cacheable" "^1.0.7"
     amazon-cognito-identity-js "^5.2.8"
     arweave "1.11.4"
-    aws-appsync "^4.1.5"
+    aws-appsync "4.1.5"
     axios "^0.24.0"
     blueimp-load-image "^5.16.0"
     cross-fetch "^3.1.5"
@@ -2786,7 +2786,7 @@ aws-appsync-auth-link@^2.0.8:
     apollo-link "1.2.5"
     debug "2.6.9"
 
-aws-appsync-subscription-link@^2.4.0:
+aws-appsync-subscription-link@^2.2.7:
   version "2.4.0"
   resolved "https://registry.yarnpkg.com/aws-appsync-subscription-link/-/aws-appsync-subscription-link-2.4.0.tgz#fe101fb728978f83434a7d22065bec709569654e"
   integrity sha512-jo9WV+ogUDhpjMOQyqvm/kcJRXND0aB7dAG4mpxP2ifr4W2Xa7SXgFhuREMPpzd/jN1wgyfArVeev+aDEM1ecw==
@@ -2799,10 +2799,10 @@ aws-appsync-subscription-link@^2.4.0:
     debug "2.6.9"
     url "^0.11.0"
 
-aws-appsync@^4.1.5:
-  version "4.1.7"
-  resolved "https://registry.yarnpkg.com/aws-appsync/-/aws-appsync-4.1.7.tgz#6186bd938e67d5621336f1b61a624ec0f671a650"
-  integrity sha512-9OZ0IUx5zqgv/CfjS4xPVORIHkc6lug2VMlXhOIyHskmX8Z/nlpGabIq3Szp6pQVUHOCRgeZXoFtL5Dph9d8TQ==
+aws-appsync@4.1.5:
+  version "4.1.5"
+  resolved "https://registry.yarnpkg.com/aws-appsync/-/aws-appsync-4.1.5.tgz#fea1d2c5161e535ef069d689de6ff9e10848deca"
+  integrity sha512-tkg7GQi/F7ZZawwzccn8dMgNu12mSwqDBQBd4oz+mi7zsnxo2Xenccd/aNsund7diKhrWb+M2VM3npY47eTvZA==
   dependencies:
     "@aws-crypto/sha256-universal" "^1.1.1"
     "@aws-sdk/client-s3" "^3.25.0"
@@ -2816,7 +2816,7 @@ aws-appsync@^4.1.5:
     apollo-link-http "1.5.8"
     apollo-link-retry "2.2.7"
     aws-appsync-auth-link "^2.0.8"
-    aws-appsync-subscription-link "^2.4.0"
+    aws-appsync-subscription-link "^2.2.7"
     debug "2.6.9"
     redux "^3.7.2"
     redux-thunk "^2.2.0"
