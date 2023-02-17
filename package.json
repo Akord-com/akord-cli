@@ -1,6 +1,6 @@
 {
   "name": "@akord/akord-cli",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "A command-line interface to interact with Akord",
   "main": "lib/index.js",
   "repository": "git@github.com:Akord-com/akord-cli.git",
