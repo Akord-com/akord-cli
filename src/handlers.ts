@@ -197,7 +197,7 @@ async function retrievePassword(): Promise<string> {
 
   try {
     password = await keytar.getPassword(service, account);
-  } catch (err) {}
+  } catch (err) { }
 
   if (password) {
     return password;
@@ -207,7 +207,7 @@ async function retrievePassword(): Promise<string> {
 
   try {
     await keytar.setPassword(service, account, password);
-  } catch (err) {}
+  } catch (err) { }
 
   return password;
 }
@@ -579,6 +579,17 @@ async function vaultGetHandler(argv: { vaultId: string }) {
   process.exit(0);
 }
 
+async function manifestGenerateHandler(argv: { vaultId: string }) {
+  const { wallet, jwtToken } = await loadCredentials();
+
+  const { vaultId } = argv;
+
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const response = await akord.manifest.generate(vaultId);
+  console.table(response);
+  process.exit(0);
+}
+
 async function stackListHandler(argv: { vaultId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const vaultId = argv.vaultId;
@@ -626,7 +637,7 @@ async function membershipListHandler(argv: { vaultId: string }) {
   const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.membership.listAll(vaultId);
   const members = response.map((membership: any) => {
-    return { 
+    return {
       id: membership.id,
       status: membership.status,
       role: membership.role,
@@ -665,6 +676,7 @@ export {
   vaultRenameHandler,
   vaultArchiveHandler,
   vaultRestoreHandler,
+  manifestGenerateHandler,
   memoCreateHandler,
   stackCreateHandler,
   stackImportHandler,

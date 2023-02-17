@@ -44,6 +44,8 @@ Commands:
   akord vault:get <vaultId>                 get vault by id
   akord vault:list                          list all user vaults
 
+  akord manifest:generate                   generate a path manifest for the vault
+
   akord stack:create <vaultId>              create a new stack
   akord stack:import <vaultId> <fileTxId>   create a new stack from an existing arweave transaction
   akord stack:rename <stackId> <name>       rename the stack

@@ -6,6 +6,7 @@ import {
   vaultRenameHandler,
   vaultArchiveHandler,
   vaultRestoreHandler,
+  manifestGenerateHandler,
   stackCreateHandler,
   stackImportHandler,
   stackRenameHandler,
@@ -82,7 +83,7 @@ const vaultRenameCommand = {
   describe: 'update vault name',
   builder: () => {
     yargs
-      .positional('vaultId', { describe: 'vauld id' })
+      .positional('vaultId', { describe: 'vault id' })
       .positional('name', { describe: 'new name for the vault' })
   },
   handler: vaultRenameHandler,
@@ -93,7 +94,7 @@ const vaultArchiveCommand = {
   describe: 'archive the vault',
   builder: () => {
     yargs
-      .positional('vaultId', { describe: 'vauld id' })
+      .positional('vaultId', { describe: 'vault id' })
   },
   handler: vaultArchiveHandler,
 };
@@ -103,9 +104,19 @@ const vaultRestoreCommand = {
   describe: 'restore the vault',
   builder: () => {
     yargs
-      .positional('vaultId', { describe: 'vauld id' })
+      .positional('vaultId', { describe: 'vault id' })
   },
   handler: vaultRestoreHandler,
+};
+
+const manifestGenerateCommand = {
+  command: 'manifest:generate <vaultId>',
+  describe: 'generate a path manifest for the vault',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+  },
+  handler: manifestGenerateHandler,
 };
 
 const stackCreateCommand = {
@@ -436,6 +447,7 @@ yargs
   .command(<CommandModule><unknown>vaultRestoreCommand)
   .command(<CommandModule><unknown>vaultGetCommand)
   .command(<CommandModule><unknown>vaultListCommand)
+  .command(<CommandModule><unknown>manifestGenerateCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackImportCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
