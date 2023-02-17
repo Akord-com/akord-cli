@@ -40,8 +40,8 @@
     "node": ">=16.0.0 <17.0.0"
   },
   "dependencies": {
-    "@akord/akord-js": "2.2.0",
-    "@akord/crypto": "0.7.1",
+    "@akord/akord-js": "3.7.0",
+    "@akord/crypto": "0.9.0",
     "cross-fetch": "^3.1.5",
     "figlet": "^1.5.2",
     "inquirer": "^8.2.0",

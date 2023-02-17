@@ -569,7 +569,7 @@ async function stackListHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.stack.list(vaultId);
+  const response = await akord.stack.listAll(vaultId);
   console.table(response);
   process.exit(0);
 }
@@ -579,7 +579,7 @@ async function folderListHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.folder.list(vaultId);
+  const response = await akord.folder.listAll(vaultId);
   console.table(response);
   process.exit(0);
 }
@@ -609,7 +609,7 @@ async function membershipListHandler(argv: { vaultId: string }) {
   const vaultId = argv.vaultId;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.membership.list(vaultId);
+  const response = await akord.membership.listAll(vaultId);
   const members = response.map((membership: any) => {
     return { 
       id: membership.id,
