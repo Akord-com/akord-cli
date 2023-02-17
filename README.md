@@ -1,9 +1,9 @@
 # akord-cli
-Akord Command Line Interface - simply interact with Akord from the terminal.
+A command-line interface to simply interact with Akord from the terminal.
 
-The CLI is a set of Akord commands for creating vaults, adding members, creating new stacks, etc.\
-The CLI uses [Akord Client](https://www.npmjs.com/package/@akord/akord-js) to create the encryption context and handle transaction formatting.\
-Each command is an interaction with the Akord Vault Protocol.
+The akord-cli package is a set of Akord commands for creating vaults, adding members, creating new stacks, etc.\
+The package uses [Akord JS](https://www.npmjs.com/package/@akord/akord-js) to create the encryption context and handle transaction formatting.\
+Each command is an interaction with the Akord Protocol.
 
 ## Getting started
 ### Installation
