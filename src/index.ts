@@ -7,6 +7,7 @@ import {
   vaultArchiveHandler,
   vaultRestoreHandler,
   stackCreateHandler,
+  stackImportHandler,
   stackRenameHandler,
   stackRevokeHandler,
   stackRestoreHandler,
@@ -132,6 +133,21 @@ const stackCreateCommand = {
       })
   },
   handler: stackCreateHandler,
+};
+
+const stackImportCommand = {
+  command: 'stack:import <vaultId> <fileTxId>',
+  describe: 'create a new stack from an existing arweave transaction',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+      .positional('fileTxId', { describe: 'arweave file transaction id reference' })
+      .option("p", {
+        alias: "parent-id",
+        describe: "parent folder id, if null: root folder"
+      })
+  },
+  handler: stackImportHandler,
 };
 
 const stackRenameCommand = {
@@ -421,6 +437,7 @@ yargs
   .command(<CommandModule><unknown>vaultGetCommand)
   .command(<CommandModule><unknown>vaultListCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
+  .command(<CommandModule><unknown>stackImportCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
   .command(<CommandModule><unknown>stackUploadRevisionCommand)
   .command(<CommandModule><unknown>stackMoveCommand)

@@ -45,6 +45,7 @@ Commands:
   akord vault:list                          list all user vaults
 
   akord stack:create <vaultId>              create a new stack
+  akord stack:import <vaultId> <fileTxId>   create a new stack from an existing arweave transaction
   akord stack:rename <stackId> <name>       rename the stack
   akord stack:upload-revision <stackId>     upload new file version to the stack
   akord stack:move <stackId> <parentId>     move the stack

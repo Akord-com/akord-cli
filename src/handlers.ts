@@ -301,6 +301,21 @@ async function stackCreateHandler(argv: {
   process.exit(0);
 }
 
+async function stackImportHandler(argv: {
+  vaultId: string,
+  fileTxId: string,
+  parentId?: string
+}) {
+  const { wallet, jwtToken } = await loadCredentials();
+  const { vaultId, fileTxId, parentId } = argv;
+
+  const akord = await Akord.init(wallet, jwtToken, config);
+  const { stackId, transactionId } = await akord.stack.import(vaultId, fileTxId, parentId);
+  console.log("Stack successfully created with id: " + stackId);
+  displayResponse(transactionId);
+  process.exit(0);
+}
+
 async function stackUploadRevisionHandler(argv: { stackId: string }) {
   const { wallet, jwtToken } = await loadCredentials();
   const stackId = argv.stackId;
@@ -652,6 +667,7 @@ export {
   vaultRestoreHandler,
   memoCreateHandler,
   stackCreateHandler,
+  stackImportHandler,
   stackUploadRevisionHandler,
   stackRenameHandler,
   stackRevokeHandler,
