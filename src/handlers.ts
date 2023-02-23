@@ -676,7 +676,7 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     process.exit(0);
   }
   const akord = await Akord.init(wallet, jwtToken, config);
-  const { name, data } = await akord.stack.getVersion(stackId, version);
+  const { name, data } = await akord.stack.getVersion(stackId, +version);
   if (!filePath) {
     filePath = process.cwd() + "/" + name;
     if (fs.existsSync(filePath)) {
