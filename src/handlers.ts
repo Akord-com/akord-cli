@@ -565,7 +565,13 @@ async function vaultListHandler() {
 
   const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.vault.list();
-  console.table(response);
+  console.table(response.map((vault) => ({
+    id: vault.id,
+    name: vault.name,
+    public: vault.public,
+    size: vault.size,
+    createdAt: vault.createdAt,
+  })));
   process.exit(0);
 }
 
@@ -585,8 +591,8 @@ async function manifestGenerateHandler(argv: { vaultId: string }) {
   const { vaultId } = argv;
 
   const akord = await Akord.init(wallet, jwtToken, config);
-  const response = await akord.manifest.generate(vaultId);
-  console.table(response);
+  const { transactionId } = await akord.manifest.generate(vaultId);
+  displayResponse(transactionId);
   process.exit(0);
 }
 
@@ -596,7 +602,14 @@ async function stackListHandler(argv: { vaultId: string }) {
 
   const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.stack.listAll(vaultId);
-  console.table(response);
+  console.table(response.map((stack) => ({
+    id: stack.id,
+    name: stack.name,
+    parentId: stack.parentId,
+    versions: stack.versions.length,
+    status: stack.status,
+    createdAt: stack.createdAt,
+  })));
   process.exit(0);
 }
 
@@ -606,7 +619,13 @@ async function folderListHandler(argv: { vaultId: string }) {
 
   const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.folder.listAll(vaultId);
-  console.table(response);
+  console.table(response.map((folder) => ({
+    id: folder.id,
+    name: folder.name,
+    parentId: folder.parentId,
+    status: folder.status,
+    createdAt: folder.createdAt,
+  })));
   process.exit(0);
 }
 
@@ -636,15 +655,13 @@ async function membershipListHandler(argv: { vaultId: string }) {
 
   const akord = await Akord.init(wallet, jwtToken, config);
   const response = await akord.membership.listAll(vaultId);
-  const members = response.map((membership: any) => {
-    return {
-      id: membership.id,
-      status: membership.status,
-      role: membership.role,
-      email: membership.memberDetails.email,
-    }
-  })
-  console.table(members);
+  console.table(response.map((membership) => ({
+    id: membership.id,
+    role: membership.role,
+    email: membership.memberDetails.email,
+    status: membership.status,
+    createdAt: membership.createdAt,
+  })));
   process.exit(0);
 }
 
