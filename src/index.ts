@@ -7,6 +7,7 @@ import {
   vaultArchiveHandler,
   vaultRestoreHandler,
   manifestGenerateHandler,
+  syncHandler,
   stackCreateHandler,
   stackImportHandler,
   stackRenameHandler,
@@ -35,7 +36,8 @@ import {
   stackGetHandler,
   folderListHandler,
   folderGetHandler,
-  stackDownloadHandler
+  stackDownloadHandler,
+  diffHandler
 } from './handlers';
 import './polyfill'
 
@@ -230,6 +232,36 @@ const stackDeleteCommand = {
       .positional('stackId', { describe: 'stack id' })
   },
   handler: stackDeleteHandler,
+};
+
+const diffCommand = {
+  command: 'diff <source> <destination>',
+  describe: 'Check diff between local dir or S3 bucket and Akord vault',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .positional('destination', { describe: 'destination storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+  },
+  handler: diffHandler,
+};
+
+const syncCommand = {
+  command: 'sync <source> <destination>',
+  describe: 'sync local dir or S3 bucket with Akord vault',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .option("a", {
+        alias: "auto-approve",
+        describe: ""
+      })
+      .option("d", {
+        alias: "delete",
+        describe: ""
+      })
+  },
+  handler: syncHandler,
 };
 
 const memoCreateCommand = {
@@ -448,6 +480,8 @@ yargs
   .command(<CommandModule><unknown>vaultGetCommand)
   .command(<CommandModule><unknown>vaultListCommand)
   .command(<CommandModule><unknown>manifestGenerateCommand)
+  .command(<CommandModule><unknown>diffCommand)
+  .command(<CommandModule><unknown>syncCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackImportCommand)
   .command(<CommandModule><unknown>stackRenameCommand)

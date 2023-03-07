@@ -1,5 +1,17 @@
+import figlet from "figlet";
 import fs from 'fs';
 import path from "path";
+import clc from 'cli-color'
+import ora from 'ora';
+import os from 'os';
+import { promisify } from "util";
+import * as keytar from "keytar";
+import { Akord, Auth } from "@akord/akord-js"
+import { WalletType, Wallet, WalletFactory, AkordWallet } from "@akord/crypto";
+import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
+import { sync } from './sync';
+import formatStorage from './sync/storage/formatter';
+import { AkordStorage } from './sync/storage/impl/akord-storage';
 import {
   askForFilePath,
   askForTransactionId,
@@ -9,15 +21,9 @@ import {
   askForPassword,
   askForCode,
   askForWaiveOfWithdrawalRight,
-  askForTermsOfServiceAndPrivacyPolicy
+  askForTermsOfServiceAndPrivacyPolicy,
+  askForConfirmation
 } from "./inquirers";
-import os from 'os';
-import { Akord } from "@akord/akord-js"
-import { WalletType, Wallet, WalletFactory, AkordWallet } from "@akord/crypto";
-import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
-import figlet from "figlet";
-import { promisify } from "util";
-import * as keytar from "keytar";
 
 const pbkdf2 = promisify(pbkdf2Cb);
 
@@ -127,7 +133,7 @@ async function loginHandler(argv: {
   if (!password) {
     password = (await askForPassword()).password;
   }
-  const { wallet, jwtToken } = await Akord.auth.signIn(email, password);
+  const { wallet, jwtToken } = await Auth.signIn(email, password);
   const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, jwtToken });
   storeWallet(JSON.stringify(encryptedWallet));
 
@@ -160,11 +166,11 @@ async function signupHandler(argv: {
     process.exit(0);
   }
 
-  await Akord.auth.signUp(email, password, { clientType: "CLI" });
+  await Auth.signUp(email, password, { clientType: "CLI" });
 
   console.log("Your account was successfully created. We have sent you the verification code.");
   const code = (await askForCode()).code;
-  await Akord.auth.verifyAccount(email, code);
+  await Auth.verifyAccount(email, code);
   console.log("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
 }
@@ -407,6 +413,74 @@ async function stackMoveHandler(argv: {
   const akord = await Akord.init(wallet, jwtToken, config);
   const { transactionId } = await akord.stack.move(stackId, parentId);
   displayResponse(transactionId);
+  process.exit(0);
+}
+
+async function diffHandler(argv: { source: string, destination: string }) {
+  const source = argv.source;
+  const destination = argv.destination;
+  const spinner = ora('Checking the diff');
+  spinner.start();
+  const { created, updated, deleted } = await sync(source, destination, { dryRun: true });
+  spinner.stop();
+  created.forEach(file => console.log(clc.green(`Add:      ${file.id}`)))
+  updated.forEach(file => console.log(clc.yellow(`Update:    ${file.id}`)))
+  deleted.forEach(file => console.log(clc.red(`Delete:    ${file.id}`)))
+  process.exit(0);
+}
+
+async function syncHandler(argv: { source: string, destination: string, autoApprove?: boolean, delete?: boolean }) {
+  const source = argv.source;
+  const destination = argv.destination;
+  const spinner = ora('Checking the diff');
+  spinner.start();
+  let progressSpinner: ora.Ora
+  await sync(source, destination, {
+    autoApprove: argv.autoApprove,
+    delete: argv.delete,
+    onApprove: async (diff) => {
+      spinner.stop();
+      diff.created.forEach(file => console.log(clc.green(`Adding:      ${file.key} (${formatStorage(file.size)})`)))
+      diff.updated.forEach(file => console.log(clc.yellow(`Updating:    ${file.key} (${formatStorage(file.size)})`)))
+      if (argv.delete) {
+        diff.deleted.forEach(file => console.log(clc.red(`Deleting:    ${file.key} (${formatStorage(file.size)})`)))
+      }
+      if (destination.startsWith(AkordStorage.uriPrefix)) {
+        console.log(`Total consumed storage after sync: ${formatStorage(diff.totalStorage)}`)
+      }
+      if (!diff.created.length && !diff.updated.length && !argv.delete || (argv.delete && !diff.deleted.length)) {
+        console.log("No changes detected. Closing")
+        return false
+      }
+      const confirmation = argv.autoApprove || (await askForConfirmation()).confirmation;
+      if (!confirmation) {
+        return false
+      }
+      return true
+    },
+    onProgress: (progress, error) => {
+      if (progressSpinner && progressSpinner.isSpinning) {
+        if (error) {
+          progressSpinner.fail()
+        }
+        else {
+          progressSpinner.succeed()
+        }
+      }
+      progressSpinner = ora(progress)
+      progressSpinner.start()
+    },
+    onDone: () => {
+      if (progressSpinner && progressSpinner.isSpinning) {
+        progressSpinner.succeed()
+      }
+      console.log()
+      progressSpinner = ora("All done\n")
+      progressSpinner.start()
+      progressSpinner.succeed()
+    }
+  });
+
   process.exit(0);
 }
 
@@ -689,12 +763,15 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
 }
 
 export {
+  loadCredentials,
   vaultCreateHandler,
   vaultRenameHandler,
   vaultArchiveHandler,
   vaultRestoreHandler,
   manifestGenerateHandler,
   memoCreateHandler,
+  diffHandler,
+  syncHandler,
   stackCreateHandler,
   stackImportHandler,
   stackUploadRevisionHandler,

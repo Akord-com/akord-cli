@@ -71,6 +71,16 @@ const askForWaiveOfWithdrawalRight = async (): Promise<{ withdrawal: boolean }> 
   ]);
 };
 
+const askForConfirmation = async (): Promise<{ confirmation: boolean }> => {
+  return inquirer.prompt([
+    {
+      name: 'confirmation',
+      type: 'confirm',
+      message: `Are you sure you want to apply the changes?`
+    },
+  ]);
+};
+
 const askForUploadType = async () => {
   return inquirer
     .prompt([
@@ -102,6 +112,7 @@ const askForRole = async () => {
 };
 
 export {
+  askForConfirmation,
   askForFilePath,
   askForTransactionId,
   askForStackName,
