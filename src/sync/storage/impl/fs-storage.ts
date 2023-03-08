@@ -5,9 +5,9 @@ import { Storage, StorageObject } from "../types"
 
 export class FsStorage extends Storage {
     
-    public async list(): Promise<StorageObject[]> {
+    public async list(recursive: boolean = true): Promise<StorageObject[]> {
         const objects: StorageObject[] = []
-        await this.listFormUri(this.uri, objects)
+        await this.listFormUri(this.uri, objects, recursive)
         return objects;
     }
 
@@ -43,13 +43,13 @@ export class FsStorage extends Storage {
           });
     }
 
-    private async listFormUri(uri: string, objects: StorageObject[] = []): Promise<void> {
+    private async listFormUri(uri: string, objects: StorageObject[] = [], recursive?: boolean): Promise<void> {
         const localObjects = await fs.promises.readdir(uri)
         for (const childPath of localObjects) {
             const filePath = path.join(uri, childPath);
             const stats = await fs.promises.stat(filePath);
-            if (stats.isDirectory()) {
-                await this.listFormUri(filePath, objects);
+            if (stats.isDirectory() && recursive) {
+                await this.listFormUri(filePath, objects, recursive);
             } else {
                 const id = this.toPosixPath(path.relative(this.uri, filePath));
                 objects.push({

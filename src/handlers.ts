@@ -429,7 +429,7 @@ async function diffHandler(argv: { source: string, destination: string }) {
   process.exit(0);
 }
 
-async function syncHandler(argv: { source: string, destination: string, autoApprove?: boolean, delete?: boolean }) {
+async function syncHandler(argv: { source: string, destination: string, autoApprove?: boolean, delete?: boolean, recursive?: boolean }) {
   const source = argv.source;
   const destination = argv.destination;
   const spinner = ora('Checking the diff');
@@ -438,6 +438,7 @@ async function syncHandler(argv: { source: string, destination: string, autoAppr
   await sync(source, destination, {
     autoApprove: argv.autoApprove,
     delete: argv.delete,
+    recursive: argv.recursive,
     onApprove: async (diff) => {
       spinner.stop();
       diff.created.forEach(file => console.log(clc.green(`Adding:      ${file.key} (${formatStorage(file.size)})`)))
@@ -445,7 +446,7 @@ async function syncHandler(argv: { source: string, destination: string, autoAppr
       if (argv.delete) {
         diff.deleted.forEach(file => console.log(clc.red(`Deleting:    ${file.key} (${formatStorage(file.size)})`)))
       }
-      if (destination.startsWith(AkordStorage.uriPrefix)) {
+      if (destination.startsWith(AkordStorage.uriPrefix) && diff.totalStorage) {
         console.log(`Total consumed storage after sync: ${formatStorage(diff.totalStorage)}`)
       }
       if (!diff.created.length && !diff.updated.length && !argv.delete || (argv.delete && !diff.deleted.length)) {

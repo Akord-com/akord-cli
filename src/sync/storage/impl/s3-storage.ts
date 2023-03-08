@@ -16,12 +16,13 @@ export class S3Storage extends Storage {
         this.bucket = this.uri.replace(S3Storage.uriPrefix, "")
     }
 
-    async list(): Promise<StorageObject[]> {
+    async list(recursive: boolean = true): Promise<StorageObject[]> {
         let response: ListObjectsV2CommandOutput;
         let nextContinuationToken: string;
         do {
             response = await this.client.send(new ListObjectsV2Command({
                 Bucket: this.bucket,
+                Delimiter: !recursive ? '/' : null,
                 ContinuationToken: nextContinuationToken,
             }));
             nextContinuationToken = response.NextContinuationToken;

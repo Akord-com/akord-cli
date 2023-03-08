@@ -8,7 +8,7 @@ export abstract class Storage {
         this.uri = uri
     }
 
-    public abstract list(): Promise<StorageObject[]>
+    public abstract list(recursive?: boolean): Promise<StorageObject[]>
     public abstract get(object: StorageObject): Promise<Readable>
     public abstract create(object: StorageObject, stream: Readable): Promise<void>
     public abstract update(object: StorageObject, stream: Readable): Promise<void>
@@ -109,6 +109,7 @@ export type SyncStorageOptions = {
     dryRun?: boolean,
     autoApprove?: boolean,
     delete?: boolean,
+    recursive?: boolean,
     excludeHidden?: boolean,
     onApprove?: (diff: StorageDiff) => Promise<boolean>
     onProgress?: (progress: string, error?: boolean) => void

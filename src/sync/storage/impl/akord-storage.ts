@@ -17,10 +17,10 @@ export class AkordStorage extends Storage {
         this.vaultId = this.uri.replace(AkordStorage.uriPrefix, "")
     }
 
-    async list(): Promise<StorageObject[]> {
+    async list(recursive: boolean = true): Promise<StorageObject[]> {
         await this.initGuard()
         const objects: StorageObject[] = []
-        await this.listFormUri("null", objects, "")
+        await this.listFormUri("null", objects, "", recursive)
         return objects
     }
 
@@ -58,7 +58,7 @@ export class AkordStorage extends Storage {
         const dirs = uri.split(path.posix.sep)
         const key = dirs.pop()
         let parentId = null
-        let dirPath = null
+        let dirPath = ''
         for (const dir of dirs) {
             dirPath += dir
             if (this.dirTrie.has(dirPath)) {
@@ -73,7 +73,7 @@ export class AkordStorage extends Storage {
         return { key, parentId }
     }
 
-    private async listFormUri(uri: string, objects: StorageObject[] = [], path: string): Promise<void> {
+    private async listFormUri(uri: string, objects: StorageObject[] = [], path: string, recursive?: boolean): Promise<void> {
         const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, uri), await this.akord.stack.listAll(this.vaultId, uri)])
 
         for (const stack of stacks) {
@@ -93,7 +93,9 @@ export class AkordStorage extends Storage {
         for (const folder of folders) {
             const folderPath = path ? `${path}/${folder.name}` : folder.name
             this.dirTrie.set(folderPath, folder.id)
-            await this.listFormUri(folder.id, objects, folderPath)
+            if (recursive) {
+                await this.listFormUri(folder.id, objects, folderPath, recursive)
+            }
         }
     }
 

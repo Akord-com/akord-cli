@@ -254,11 +254,15 @@ const syncCommand = {
       .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .option("a", {
         alias: "auto-approve",
-        describe: ""
+        describe: "Skips confirmation step. False by default"
       })
       .option("d", {
         alias: "delete",
-        describe: ""
+        describe: "Deletes files non existing in source storage from target storage. False by default"
+      })
+      .option("r", {
+        alias: "recursive",
+        describe: "Recursivly compares storages (includes files from directories, subdirectories etc.) True by default"
       })
   },
   handler: syncHandler,
