@@ -4,6 +4,7 @@ import path from "path";
 import clc from 'cli-color'
 import ora from 'ora';
 import os from 'os';
+import * as jwt from 'jsonwebtoken';
 import { promisify } from "util";
 import * as keytar from "keytar";
 import { Akord, Auth } from "@akord/akord-js"
@@ -24,6 +25,7 @@ import {
   askForTermsOfServiceAndPrivacyPolicy,
   askForConfirmation
 } from "./inquirers";
+import { StorageDiff } from "./sync/storage/types";
 
 const pbkdf2 = promisify(pbkdf2Cb);
 
@@ -419,39 +421,39 @@ async function stackMoveHandler(argv: {
 async function diffHandler(argv: { source: string, destination: string }) {
   const source = argv.source;
   const destination = argv.destination;
-  const spinner = ora('Checking the diff');
+  const spinner = ora('Checking the diff...');
   spinner.start();
-  const { created, updated, deleted } = await sync(source, destination, { dryRun: true });
+  const diff = await sync(source, destination, { dryRun: true });
   spinner.stop();
-  created.forEach(file => console.log(clc.green(`Add:      ${file.id}`)))
-  updated.forEach(file => console.log(clc.yellow(`Update:    ${file.id}`)))
-  deleted.forEach(file => console.log(clc.red(`Delete:    ${file.id}`)))
+  logDiff(diff, { delete: true })
   process.exit(0);
 }
 
-async function syncHandler(argv: { source: string, destination: string, autoApprove?: boolean, delete?: boolean, recursive?: boolean }) {
+async function syncHandler(argv: { source: string, destination: string, dryRun?: boolean, autoApprove?: boolean, delete?: boolean, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean }) {
   const source = argv.source;
   const destination = argv.destination;
-  const spinner = ora('Checking the diff');
+  
+  const spinner = ora('Checking the diff...');
   spinner.start();
+  
   let progressSpinner: ora.Ora
-  await sync(source, destination, {
+  
+  const diff = await sync(source, destination, {
+    dryRun: argv.dryRun,
     autoApprove: argv.autoApprove,
     delete: argv.delete,
     recursive: argv.recursive,
+    allowEmptyDirs: argv.allowEmptyDirs,
+    excludeHidden: argv.excludeHidden,
     onApprove: async (diff) => {
-      spinner.stop();
-      diff.created.forEach(file => console.log(clc.green(`Adding:      ${file.key} (${formatStorage(file.size)})`)))
-      diff.updated.forEach(file => console.log(clc.yellow(`Updating:    ${file.key} (${formatStorage(file.size)})`)))
-      if (argv.delete) {
-        diff.deleted.forEach(file => console.log(clc.red(`Deleting:    ${file.key} (${formatStorage(file.size)})`)))
+      spinner.stop()
+      logDiff(diff, { delete: argv.delete})
+      if (!diff.created.length && !diff.updated.length && (!argv.delete || (argv.delete && !diff.deleted.length))) {
+        console.log("No changes detected. Closing")
+        return false
       }
       if (destination.startsWith(AkordStorage.uriPrefix) && diff.totalStorage) {
         console.log(`Total consumed storage after sync: ${formatStorage(diff.totalStorage)}`)
-      }
-      if (!diff.created.length && !diff.updated.length && !argv.delete || (argv.delete && !diff.deleted.length)) {
-        console.log("No changes detected. Closing")
-        return false
       }
       const confirmation = argv.autoApprove || (await askForConfirmation()).confirmation;
       if (!confirmation) {
@@ -463,6 +465,10 @@ async function syncHandler(argv: { source: string, destination: string, autoAppr
       if (progressSpinner && progressSpinner.isSpinning) {
         if (error) {
           progressSpinner.fail()
+          progressSpinner = ora(progress)
+          progressSpinner.start()
+          progressSpinner.fail()
+          return
         }
         else {
           progressSpinner.succeed()
@@ -480,9 +486,22 @@ async function syncHandler(argv: { source: string, destination: string, autoAppr
       progressSpinner.start()
       progressSpinner.succeed()
     }
-  });
+  })
 
+  if (argv.dryRun) {
+    spinner.stop()
+    logDiff(diff, { delete: argv.delete})
+  }
   process.exit(0);
+}
+
+const logDiff = (diff: StorageDiff, options: { delete?: boolean } = {}) => {
+  diff.created.forEach(object => console.log(clc.green(`Add:      ${object.key} (${formatStorage(object.size)})`)))
+  diff.updated.forEach(object => console.log(clc.yellow(`Update:    ${object.key} (${formatStorage(object.size)})`)))
+  if (options.delete) {
+    diff.deleted.forEach(object => console.log(clc.red(`Delete:    ${object.key} (${formatStorage(object.size)})`)))
+  }
+  diff.excluded.forEach(object => console.log(clc.white(`Excluded:    ${object.key} (${formatStorage(object.size)})`)))
 }
 
 async function memoCreateHandler(argv: {

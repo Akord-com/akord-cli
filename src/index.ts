@@ -256,13 +256,21 @@ const syncCommand = {
         alias: "auto-approve",
         describe: "Skips confirmation step. False by default"
       })
+      .option("r", {
+        alias: "recursive",
+        describe: "Recursivly compares storages (includes files from directories, subdirectories etc.) True by default"
+      })
       .option("d", {
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
-      .option("r", {
-        alias: "recursive",
-        describe: "Recursivly compares storages (includes files from directories, subdirectories etc.) True by default"
+      .option("e", {
+        alias: "allow-empty-dirs",
+        describe: "Empty directories are recreated/deleted. False by default"
+      })
+      .option("h", {
+        alias: "exclude-hidden",
+        describe: "Exclude hidden directories & files. False by default"
       })
   },
   handler: syncHandler,

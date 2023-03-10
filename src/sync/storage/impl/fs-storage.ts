@@ -4,11 +4,11 @@ import { Readable } from 'stream';
 import { Storage, StorageObject } from "../types"
 
 export class FsStorage extends Storage {
-    
-    public async list(recursive: boolean = true): Promise<StorageObject[]> {
-        const objects: StorageObject[] = []
-        await this.listFormUri(this.uri, objects, recursive)
-        return objects;
+
+    public async list(recursive: boolean = true, allowEmptyDirs: boolean = true, excludeHidden: boolean = false): Promise<StorageObject[]> {
+        this.objects = []
+        await this.listFormUri(this.uri, recursive, allowEmptyDirs, excludeHidden)
+        return this.objects;
     }
 
     public async get(object: StorageObject): Promise<Readable> {
@@ -36,29 +36,52 @@ export class FsStorage extends Storage {
         stream.pipe(fs.createWriteStream(this.toLocalPath(path.join(this.uri, object.key))))
         await new Promise((resolve, reject) => {
             stream.on('finish', () => {
-              resolve(true);  
+                resolve(true);
             }).on('error', err => {
-              reject(err);
+                reject(err);
             });
-          });
+        });
     }
 
-    private async listFormUri(uri: string, objects: StorageObject[] = [], recursive?: boolean): Promise<void> {
+    private async listFormUri(uri: string, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<void> {
         const localObjects = await fs.promises.readdir(uri)
-        for (const childPath of localObjects) {
-            const filePath = path.join(uri, childPath);
-            const stats = await fs.promises.stat(filePath);
-            if (stats.isDirectory() && recursive) {
-                await this.listFormUri(filePath, objects, recursive);
-            } else {
+        if (uri && (!localObjects || !localObjects.length) && allowEmptyDirs) {
+            this.objects.push({
+                lastModified: 0,
+                size: 0,
+                name: uri,
+                id: uri,
+                key: uri,
+                type: "folder"
+            });
+        } else {
+            for (const childPath of localObjects) {
+                const filePath = path.join(uri, childPath);
+                const stats = await fs.promises.stat(filePath);
                 const id = this.toPosixPath(path.relative(this.uri, filePath));
-                objects.push({
-                    lastModified: stats.mtimeMs,
-                    size: stats.size,
-                    name: id,
-                    id: id,
-                    key: id
-                });
+                if (childPath.startsWith('.') && excludeHidden) {
+                    this.excludedObjects.push({
+                        lastModified: stats.mtimeMs,
+                        size: stats.size,
+                        name: id,
+                        id: id,
+                        key: id,
+                        type: stats.isDirectory() ? "folder" : "file"
+                    })
+                } else {
+                    if (stats.isDirectory() && recursive) {
+                        await this.listFormUri(filePath, recursive);
+                    } else {
+                        this.objects.push({
+                            lastModified: stats.mtimeMs,
+                            size: stats.size,
+                            name: id,
+                            id: id,
+                            key: id,
+                            type: "file"
+                        });
+                    }
+                }
             }
         }
     }

@@ -3,19 +3,20 @@ import { Readable } from "stream";
 export abstract class Storage {
     protected uri: string;
     protected objects: StorageObject[] = [];
+    protected excludedObjects: StorageObject[] = [];
 
     constructor(uri: string) {
         this.uri = uri
     }
 
-    public abstract list(recursive?: boolean): Promise<StorageObject[]>
+    public abstract list(recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<StorageObject[]>
     public abstract get(object: StorageObject): Promise<Readable>
-    public abstract create(object: StorageObject, stream: Readable): Promise<void>
+    public abstract create(object: StorageObject, stream?: Readable): Promise<void>
     public abstract update(object: StorageObject, stream: Readable): Promise<void>
     public abstract delete(object: StorageObject): Promise<void>
 
     public async sync(storage: Storage, options: SyncStorageOptions = {}): Promise<StorageDiff> {
-        const diff = await this.diff(storage)
+        const diff = await this.diff(storage, options)
         if (options.dryRun) {
             return diff
         }
@@ -25,7 +26,7 @@ export abstract class Storage {
         for (const object of diff.created) {
             options.onProgress(`Creating... ${object.key}`)
             try {
-                await storage.create(object, (await this.get(object)))
+                await storage.create(object, (object.type !== "folder" ? await this.get(object) : null))
             } catch (e) {
                 options.onProgress(`Failed creating: ${object.key}`, true)
             }
@@ -54,9 +55,9 @@ export abstract class Storage {
         }
     }
 
-    public async diff(storage: Storage): Promise<StorageDiff> {
-        const sourceStorageContents = await this.list()
-        const targetStorageContents = await storage.list()
+    public async diff(storage: Storage, options: SyncStorageOptions = {}): Promise<StorageDiff> {
+        const sourceStorageContents = await this.list(options.recursive, options.allowEmptyDirs, options.excludeHidden)
+        const targetStorageContents = await storage.list(options.recursive, options.allowEmptyDirs, options.excludeHidden)
 
         const sourceObjectMap = new Map(
             sourceStorageContents.map((sourceObject) => [sourceObject.key, sourceObject]),
@@ -84,7 +85,8 @@ export abstract class Storage {
                 deleted.push(targetObject);
             }
         });
-        return { created, updated, deleted, totalStorage };
+        const excluded = this.excludedObjects;
+        return { created, updated, deleted, excluded, totalStorage };
     }
 }
 
@@ -94,6 +96,8 @@ export type StorageObject = {
     name: string,
     lastModified: number,
     size: number,
+    uri?: string,
+    type?: "file" | "folder"
     mimeType?: string,
     parentId?: string,
 }
@@ -102,6 +106,7 @@ export type StorageDiff = {
     created: StorageObject[],
     updated: StorageObject[],
     deleted: StorageObject[],
+    excluded: StorageObject[],
     totalStorage: number,
 }
 
@@ -110,6 +115,7 @@ export type SyncStorageOptions = {
     autoApprove?: boolean,
     delete?: boolean,
     recursive?: boolean,
+    allowEmptyDirs?: boolean,
     excludeHidden?: boolean,
     onApprove?: (diff: StorageDiff) => Promise<boolean>
     onProgress?: (progress: string, error?: boolean) => void
