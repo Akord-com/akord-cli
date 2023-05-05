@@ -236,7 +236,7 @@ const stackDeleteCommand = {
 
 const diffCommand = {
   command: 'diff <source> <destination>',
-  describe: 'Check diff between local dir or S3 bucket and Akord vault',
+  describe: 'check diff between local dir or S3 bucket and Akord vault',
   builder: () => {
     yargs
       .positional('source', { describe: 'source storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
@@ -258,17 +258,17 @@ const syncCommand = {
       })
       .option("r", {
         alias: "recursive",
-        describe: "Recursivly compares storages (includes files from directories, subdirectories etc.) True by default"
+        describe: "Recursively compares storages (includes files from directories, subdirectories etc.) True by default"
       })
       .option("d", {
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
-      .option("e", {
+      .option("aed", {
         alias: "allow-empty-dirs",
         describe: "Empty directories are recreated/deleted. False by default"
       })
-      .option("h", {
+      .option("eh", {
         alias: "exclude-hidden",
         describe: "Exclude hidden directories & files. False by default"
       })

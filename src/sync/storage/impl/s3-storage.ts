@@ -19,27 +19,31 @@ export class S3Storage extends Storage {
     async list(recursive: boolean = true): Promise<StorageObject[]> {
         let response: ListObjectsV2CommandOutput;
         let nextContinuationToken: string;
-        do {
-            response = await this.client.send(new ListObjectsV2Command({
-                Bucket: this.bucket,
-                Delimiter: !recursive ? '/' : null,
-                ContinuationToken: nextContinuationToken,
-            }));
-            nextContinuationToken = response.NextContinuationToken;
-            if (response.Contents !== undefined) {
-                response.Contents.forEach(({ Key, LastModified, Size }) => {
-                    if (!Key.endsWith(path.posix.sep)) {
-                        this.objects.push({
-                            id: Key,
-                            key: Key,
-                            name: Key,
-                            lastModified: LastModified.getTime(),
-                            size: Size,
-                        });
-                    }
-                });
-            }
-        } while (response.IsTruncated);
+        try {
+            do {
+                response = await this.client.send(new ListObjectsV2Command({
+                    Bucket: this.bucket,
+                    Delimiter: !recursive ? '/' : '',
+                    ContinuationToken: nextContinuationToken,
+                }));
+                nextContinuationToken = response.NextContinuationToken;
+                if (response.Contents !== undefined) {
+                    response.Contents.forEach(({ Key, LastModified, Size }) => {
+                        if (!Key.endsWith(path.posix.sep)) {
+                            this.objects.push({
+                                id: Key,
+                                key: Key,
+                                name: Key,
+                                lastModified: LastModified.getTime(),
+                                size: Size,
+                            });
+                        }
+                    });
+                }
+            } while (response.IsTruncated);
+        } catch (e) {
+            throw Error('Incorrect bucket URI or no access to specified bucket')
+        }
         return this.objects
     }
 
@@ -49,11 +53,11 @@ export class S3Storage extends Storage {
     }
 
     public async create(object: StorageObject, readable: Readable, onProgress?: (progress: number) => void): Promise<void> {
-        this.put(object,readable, onProgress)
+        this.put(object, readable, onProgress)
     }
 
     public async update(object: StorageObject, readable: Readable, onProgress?: (progress: number) => void): Promise<void> {
-        this.put(object,readable, onProgress)
+        this.put(object, readable, onProgress)
     }
 
     public async delete(object: StorageObject): Promise<void> {

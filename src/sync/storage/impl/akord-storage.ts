@@ -1,5 +1,7 @@
 import { Akord } from "@akord/akord-js";
+import { status } from "@akord/akord-js/lib/constants";
 import { NodeJs } from "@akord/akord-js/lib/types/file";
+import { ListOptions } from "@akord/akord-js/lib/types/query-options";
 import path from "path";
 import { Readable } from "stream";
 import { loadCredentials } from "../../../handlers";
@@ -11,6 +13,15 @@ export class AkordStorage extends Storage {
     private vaultId: string
     private akord: Akord
     private dirTrie: Map<string, string> = new Map()
+    private listOptions = {
+        shouldDecrypt: true,
+        filter: {
+          status: { ne: status.REVOKED },
+          and: {
+            status: { ne: status.DELETED }
+          }
+        }
+      } as ListOptions;
 
     constructor(uri: string) {
         super(uri);
@@ -55,8 +66,7 @@ export class AkordStorage extends Storage {
 
     private async initGuard() {
         if (!this.akord) {
-            const { wallet, jwtToken } = await loadCredentials();
-            this.akord = await Akord.init(wallet, jwtToken)
+            this.akord = await loadCredentials();
         }
     }
 
@@ -80,7 +90,7 @@ export class AkordStorage extends Storage {
     }
 
     private async listFormUri(uri: string, path: string, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<void> {
-        const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, uri), await this.akord.stack.listAll(this.vaultId, uri)])
+        const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, { ...this.listOptions, parentId: uri } ), await this.akord.stack.listAll(this.vaultId, { ...this.listOptions, parentId: uri })])
 
         if (uri && !folders.length && !stacks.length && allowEmptyDirs) {
             const folder = await this.akord.folder.get(uri)
