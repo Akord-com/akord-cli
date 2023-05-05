@@ -203,7 +203,7 @@ async function vaultCreateHandler(argv: {
   const termsOfAccess = argv.termsOfAccess;
 
   const akord = await loadCredentials();
-  const { vaultId, transactionId } = await akord.vault.create(name, termsOfAccess);
+  const { vaultId, transactionId } = await akord.vault.create(name, { termsOfAccess });
   console.log("Vault successfully created with id: " + vaultId);
   displayResponse(transactionId);
   process.exit(0);
@@ -307,7 +307,7 @@ async function stackCreateHandler(argv: {
   const name = argv.name || file.name || (await askForStackName(file.name)).name;
 
   const akord = await loadCredentials();
-  const { stackId, transactionId } = await akord.stack.create(vaultId, file, name, parentId);
+  const { stackId, transactionId } = await akord.stack.create(vaultId, file, name, { parentId });
   console.log("Stack successfully created with id: " + stackId);
   displayResponse(transactionId);
   process.exit(0);
@@ -321,7 +321,7 @@ async function stackImportHandler(argv: {
   const { vaultId, fileTxId, parentId } = argv;
 
   const akord = await loadCredentials();
-  const { stackId, transactionId } = await akord.stack.import(vaultId, fileTxId, parentId);
+  const { stackId, transactionId } = await akord.stack.import(vaultId, fileTxId, { parentId });
   console.log("Stack successfully created with id: " + stackId);
   displayResponse(transactionId);
   process.exit(0);
@@ -525,7 +525,7 @@ async function folderCreateHandler(argv: {
   const name = argv.name;
 
   const akord = await loadCredentials();
-  const { folderId, transactionId } = await akord.folder.create(vaultId, name, parentId);
+  const { folderId, transactionId } = await akord.folder.create(vaultId, name, { parentId });
   console.log("Folder successfully created with id: " + folderId);
   displayResponse(transactionId);
   process.exit(0);
