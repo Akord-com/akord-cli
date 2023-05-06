@@ -49,7 +49,7 @@ function configure() {
 function storeWallet(walletData) {
   try {
     storage.setItem("wallet", walletData);
-    console.log("Your wallet was stored successfully at: ~/.akord/wallet");
+    console.log("Your wallet was stored successfully at: ~/.akord/credentials");
   } catch (error) {
     console.log("Oops, something went wrong when storing your wallet: " + error);
     process.exit(0);

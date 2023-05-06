@@ -11,6 +11,7 @@ export class AkordStorage extends Storage {
 
     public static uriPrefix = "akord://"
     private vaultId: string
+    private folderId: string
     private akord: Akord
     private dirTrie: Map<string, string> = new Map()
     private listOptions = {
@@ -25,13 +26,15 @@ export class AkordStorage extends Storage {
 
     constructor(uri: string) {
         super(uri);
-        this.vaultId = this.uri.replace(AkordStorage.uriPrefix, "")
+        const path = this.uri.replace(AkordStorage.uriPrefix, "").split("/")
+        this.vaultId = path[0]
+        this.folderId = path[1] || "null"
     }
 
     public async list(recursive: boolean = true, allowEmptyDirs: boolean = false, excludeHidden: boolean = false): Promise<StorageObject[]> {
         this.objects = []
         await this.initGuard()
-        await this.listFormUri("null", "", recursive, allowEmptyDirs, excludeHidden)
+        await this.listFormUri(this.folderId, "", recursive, allowEmptyDirs, excludeHidden)
         return this.objects
     }
 
@@ -46,10 +49,10 @@ export class AkordStorage extends Storage {
         await this.initGuard()
         const { key, parentId } = await this.putDirs(object.key)
         if (object.type === "folder") {
-            await this.akord.folder.create(this.vaultId, key, parentId)
+            await this.akord.folder.create(this.vaultId, key, { parentId })
         } else {
             const file = await NodeJs.File.fromReadable(stream, key, object.mimeType)
-            await this.akord.stack.create(this.vaultId, file, key, parentId)
+            await this.akord.stack.create(this.vaultId, file, key, { parentId })
         }
     }
 
