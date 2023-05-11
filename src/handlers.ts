@@ -8,7 +8,7 @@ import { promisify } from "util";
 import * as keytar from "keytar";
 import { Akord, Auth } from "@akord/akord-js"
 import { FileStorage } from "@akord/akord-auth"
-import { Wallet, AkordWallet } from "@akord/crypto";
+import { AkordWallet } from "@akord/crypto";
 import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
 import { sync } from './sync';
 import formatStorage from './sync/storage/formatter';
@@ -58,6 +58,7 @@ function storeWallet(walletData) {
 
 type StoredWallet = {
   mnemonic: string;
+  account: string;
 };
 
 type BasePBKDF2Settings = {
@@ -75,6 +76,7 @@ type StoredPBKDF2Settings = BasePBKDF2Settings & {
 
 
 type StoredEncryptedWallet = {
+  account: string;
   encryptedWallet: string;
   pbkdf2: StoredPBKDF2Settings;
   aes: {
@@ -112,6 +114,7 @@ async function encryptWallet(password: string, storedWallet: StoredWallet): Prom
   encryptedWallet += cipher.final("base64")
   const authTag = cipher.getAuthTag().toString("base64");
   return {
+    account: storedWallet.account,
     encryptedWallet,
     pbkdf2: { ...pbkdf2Settings, salt: pbkdf2Settings.salt.toString("base64") },
     aes: { algorithm: aesAlgorithm, iv: iv.toString("base64"), authTag },
@@ -140,27 +143,18 @@ async function decryptWallet(password: string, storedEncryptedWallet: StoredEncr
 
 async function loginHandler(argv: {
   email: string,
-  password?: string
 }) {
   console.log(figlet.textSync("Akord", { horizontalLayout: "full" }));
   const email = argv.email;
-  let password = argv.password;
+  const password = await retrievePassword(false, email);
+  const { wallet } = await Auth.signIn(email, password);
+  const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, account: email });
+  storeWallet(JSON.stringify(encryptedWallet));
 
-  if (!password) {
-    password = (await askForPassword()).password;
-  }
-  try {
-    const { wallet } = await Auth.signIn(email, password);
-    const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase });
-    storeWallet(JSON.stringify(encryptedWallet));
-
-    console.log("Your wallet address: " + await wallet.getAddress());
-    console.log("Your wallet public key: " + wallet.publicKey());
-    console.log("Your wallet signing public key: " + wallet.signingPublicKey());
-    process.exit(0);
-  } catch (e) {
-    console.log(e)
-  }
+  console.log("Your wallet address: " + await wallet.getAddress()); 
+  console.log("Your wallet public key: " + wallet.publicKey());
+  console.log("Your wallet signing public key: " + wallet.signingPublicKey());
+  process.exit(0);
 }
 
 async function signupHandler(argv: {
@@ -214,18 +208,19 @@ function displayResponse(transactionId: string) {
   console.log("https://sonar.warp.cc/#/app/interaction/" + transactionId);
 }
 
-async function retrievePassword(): Promise<string> {
+async function retrievePassword(useVault: boolean, account: string = "default"): Promise<string> {
   const service = "akord";
-  const account = "default";
 
   let password: string;
 
-  try {
-    password = await keytar.getPassword(service, account);
-  } catch (err) { }
+  if (useVault) {
+    try {
+      password = await keytar.getPassword(service, account);
+    } catch (err) { }
 
-  if (password) {
-    return password;
+    if (password) {
+      return password;
+    }
   }
 
   password = (await askForPassword()).password;
@@ -238,7 +233,7 @@ async function retrievePassword(): Promise<string> {
 }
 
 async function readEncryptedConfig(config: StoredEncryptedWallet): Promise<StoredWallet> {
-  const password = await retrievePassword();
+  const password = await retrievePassword(true, config.account);
   const iv = Buffer.from(config.aes.iv, "base64");
   const pbkdf2Settings = { ...config.pbkdf2, salt: Buffer.from(config.pbkdf2.salt, "base64") };
   const key = await deriveKey(password, pbkdf2Settings);
