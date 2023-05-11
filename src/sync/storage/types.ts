@@ -1,4 +1,5 @@
 import { Readable } from "stream";
+import { logger } from "../../logger";
 
 export abstract class Storage {
     protected uri: string;
@@ -28,6 +29,7 @@ export abstract class Storage {
             try {
                 await storage.create(object, (object.type !== "folder" ? await this.get(object) : null))
             } catch (e) {
+                logger.log("error", e)
                 options.onProgress(`Failed creating: ${object.key}`, true)
             }
         }

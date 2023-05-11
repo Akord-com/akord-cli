@@ -5,7 +5,7 @@ import { Storage, StorageObject } from "../types"
 
 export class FsStorage extends Storage {
 
-    public async list(recursive: boolean = true, allowEmptyDirs: boolean = true, excludeHidden: boolean = false): Promise<StorageObject[]> {
+    public async list(recursive: boolean = true, allowEmptyDirs: boolean = true, excludeHidden: boolean = true): Promise<StorageObject[]> {
         this.objects = []
         await this.listFormUri(this.uri, recursive, allowEmptyDirs, excludeHidden)
         return this.objects;
@@ -59,7 +59,7 @@ export class FsStorage extends Storage {
                 const filePath = path.join(uri, childPath);
                 const stats = await fs.promises.stat(filePath);
                 const id = this.toPosixPath(path.relative(this.uri, filePath));
-                if (childPath.startsWith('.') && excludeHidden) {
+                if (path.basename(childPath).startsWith('.') && excludeHidden) {
                     this.excludedObjects.push({
                         lastModified: stats.mtimeMs,
                         size: stats.size,

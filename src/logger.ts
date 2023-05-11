@@ -13,11 +13,11 @@ export const logger = createLogger({
     ),
     transports: [
         new transports.File({
-            filename: "logs/example.log",
+            filename: LOGS_PATH,
         }),
         new transports.File({
             level: "error",
-            filename: "logs/error.log",
+            filename: LOGS_PATH,
         }),
         new transports.Console({
             level: "info"

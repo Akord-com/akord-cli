@@ -35,7 +35,7 @@ export class S3Storage extends Storage {
                                 key: Key,
                                 name: Key,
                                 lastModified: LastModified.getTime(),
-                                size: Size,
+                                size: Size
                             });
                         }
                     });

@@ -31,7 +31,7 @@ export class AkordStorage extends Storage {
         this.folderId = path[1] || "null"
     }
 
-    public async list(recursive: boolean = true, allowEmptyDirs: boolean = false, excludeHidden: boolean = false): Promise<StorageObject[]> {
+    public async list(recursive: boolean = true, allowEmptyDirs: boolean = false, excludeHidden: boolean = true): Promise<StorageObject[]> {
         this.objects = []
         await this.initGuard()
         await this.listFormUri(this.folderId, "", recursive, allowEmptyDirs, excludeHidden)
@@ -83,7 +83,7 @@ export class AkordStorage extends Storage {
             if (this.dirTrie.has(dirPath)) {
                 parentId = this.dirTrie.get(dirPath)
             } else {
-                const { folderId } = await this.akord.folder.create(this.vaultId, dir, parentId)
+                const { folderId } = await this.akord.folder.create(this.vaultId, dir, { parentId })
                 this.dirTrie.set(dirPath, folderId)
                 parentId = folderId
             }
