@@ -1,4 +1,4 @@
-import { GetObjectCommand, ListObjectsV2Command, ListObjectsV2CommandOutput, S3Client } from "@aws-sdk/client-s3";
+import { GetObjectCommand, ListObjectsV2Command, ListObjectsV2CommandInput, ListObjectsV2CommandOutput, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { Readable } from "stream";
 import { Storage, StorageObject } from "../types"
@@ -9,31 +9,44 @@ export class S3Storage extends Storage {
 
     public static uriPrefix = "s3://"
     private bucket: string;
-    private client: S3Client = new S3Client({})
+    private prefix: string;
+    private client: S3Client = new S3Client({});
 
     constructor(uri: string) {
-        super(uri)
-        this.bucket = this.uri.replace(S3Storage.uriPrefix, "")
+        super(uri);
+        const path = this.uri.replace(S3Storage.uriPrefix, "").split("/");
+        this.bucket = path.shift();
+        this.prefix = path.length ? path.join('/') : null;
+        if (this.prefix && !this.prefix.endsWith('/')) {
+            this.prefix += '/';
+        }
     }
 
     async list(recursive: boolean = true): Promise<StorageObject[]> {
-        let response: ListObjectsV2CommandOutput;
+        let response: ListObjectsV2CommandOutput
+        let request: ListObjectsV2CommandInput = {
+            Bucket: this.bucket,
+            Delimiter: !recursive ? '/' : ''
+        }
         let nextContinuationToken: string;
         try {
             do {
-                response = await this.client.send(new ListObjectsV2Command({
-                    Bucket: this.bucket,
-                    Delimiter: !recursive ? '/' : '',
-                    ContinuationToken: nextContinuationToken,
-                }));
+                if (nextContinuationToken) {
+                    request.ContinuationToken = nextContinuationToken;
+                }
+                if (this.prefix) {
+                    request.Prefix = this.prefix;
+                }
+                response = await this.client.send(new ListObjectsV2Command(request));
                 nextContinuationToken = response.NextContinuationToken;
                 if (response.Contents !== undefined) {
                     response.Contents.forEach(({ Key, LastModified, Size }) => {
                         if (!Key.endsWith(path.posix.sep)) {
+                            const key = this.prefix ? Key.replace(this.prefix, '') : Key
                             this.objects.push({
-                                id: Key,
-                                key: Key,
-                                name: Key,
+                                id: key,
+                                key: key,
+                                name: key,
                                 lastModified: LastModified.getTime(),
                                 size: Size
                             });
@@ -48,7 +61,7 @@ export class S3Storage extends Storage {
     }
 
     public async get(object: StorageObject): Promise<Readable> {
-        const command = new GetObjectCommand({ Bucket: this.bucket, Key: object.id })
+        const command = new GetObjectCommand({ Bucket: this.bucket, Key: this.prefix ? this.prefix + object.key : object.key })
         return (await this.client.send(command)).Body as Readable
     }
 
@@ -61,7 +74,7 @@ export class S3Storage extends Storage {
     }
 
     public async delete(object: StorageObject): Promise<void> {
-        const command = new GetObjectCommand({ Bucket: this.bucket, Key: object.id })
+        const command = new GetObjectCommand({ Bucket: this.bucket, Key: this.prefix ? this.prefix + object.key : object.key })
         await this.client.send(command)
     }
 
@@ -71,7 +84,7 @@ export class S3Storage extends Storage {
             client: this.client,
             params: {
                 Bucket: this.bucket,
-                Key: object.key,
+                Key: this.prefix ? this.prefix + object.key : object.key,
                 Body: passThroughStream
             },
         });

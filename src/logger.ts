@@ -19,8 +19,5 @@ export const logger = createLogger({
             level: "error",
             filename: LOGS_PATH,
         }),
-        new transports.Console({
-            level: "info"
-        }),
     ],
 });

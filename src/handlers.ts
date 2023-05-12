@@ -173,6 +173,7 @@ async function loginHandler(argv: {
   console.log(figlet.textSync("Akord", { horizontalLayout: "full" }));
   const email = argv.email;
   const password = await retrievePassword(false, email);
+  spinner.start("Signing in...")
   const { wallet } = await Auth.signIn(email, password);
   const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, account: email });
   storeWallet(JSON.stringify(encryptedWallet));

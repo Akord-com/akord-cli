@@ -76,14 +76,14 @@ export class AkordStorage extends Storage {
     private async putDirs(uri: string): Promise<{ key: string, parentId: string }> {
         const dirs = uri.split(path.posix.sep)
         const key = dirs.pop()
-        let parentId = null
+        let parentId = this.folderId === "null" ? null : this.folderId;
         let dirPath = ''
         for (const dir of dirs) {
             dirPath += dir
             if (this.dirTrie.has(dirPath)) {
                 parentId = this.dirTrie.get(dirPath)
             } else {
-                const { folderId } = await this.akord.folder.create(this.vaultId, dir, { parentId })
+                const { folderId } = await this.akord.folder.create(this.vaultId, dir, { parentId: parentId })
                 this.dirTrie.set(dirPath, folderId)
                 parentId = folderId
             }
