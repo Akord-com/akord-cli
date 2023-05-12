@@ -255,22 +255,32 @@ const syncCommand = {
       .positional('source', { describe: 'source storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .option("a", {
+        type: 'boolean', 
+        default: false,
         alias: "auto-approve",
         describe: "Skips confirmation step. False by default"
       })
       .option("r", {
+        type: 'boolean', 
+        default: true,
         alias: "recursive",
         describe: "Recursively compares storages (includes files from directories, subdirectories etc.) True by default"
       })
       .option("d", {
+        type: 'boolean', 
+        default: false,
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
       .option("aed", {
+        type: 'boolean', 
+        default: false,
         alias: "allow-empty-dirs",
         describe: "Empty directories are recreated/deleted. False by default"
       })
       .option("eh", {
+        type: 'boolean', 
+        default: false,
         alias: "exclude-hidden",
         describe: "Exclude hidden directories & files. False by default"
       })

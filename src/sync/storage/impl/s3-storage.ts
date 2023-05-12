@@ -22,11 +22,12 @@ export class S3Storage extends Storage {
         }
     }
 
-    async list(recursive: boolean = true): Promise<StorageObject[]> {
+    async list(recursive: boolean = true, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<StorageObject[]> {
         let response: ListObjectsV2CommandOutput
         let request: ListObjectsV2CommandInput = {
             Bucket: this.bucket,
-            Delimiter: !recursive ? '/' : ''
+            Prefix: this.prefix ? this.prefix : '',
+            Delimiter: recursive ? '' : '/'
         }
         let nextContinuationToken: string;
         try {
@@ -34,21 +35,35 @@ export class S3Storage extends Storage {
                 if (nextContinuationToken) {
                     request.ContinuationToken = nextContinuationToken;
                 }
-                if (this.prefix) {
-                    request.Prefix = this.prefix;
-                }
                 response = await this.client.send(new ListObjectsV2Command(request));
                 nextContinuationToken = response.NextContinuationToken;
                 if (response.Contents !== undefined) {
                     response.Contents.forEach(({ Key, LastModified, Size }) => {
                         if (!Key.endsWith(path.posix.sep)) {
                             const key = this.prefix ? Key.replace(this.prefix, '') : Key
+                            if (!excludeHidden || !key.split('/').some(object => object.startsWith('.'))) {
+                                this.objects.push({
+                                    id: key,
+                                    key: key,
+                                    name: key,
+                                    lastModified: LastModified.getTime(),
+                                    size: Size
+                                });
+                            }
+                        }
+                    });
+                }
+                if (response.CommonPrefixes !== undefined) {
+                    response.CommonPrefixes.forEach(({ Prefix }) => {
+                        const key = (this.prefix ? Prefix.replace(this.prefix, '') : Prefix).replace('/', '')
+                        if (!excludeHidden || !key.split('/').some(object => object.startsWith('.'))) {
                             this.objects.push({
                                 id: key,
                                 key: key,
                                 name: key,
-                                lastModified: LastModified.getTime(),
-                                size: Size
+                                lastModified: 0,
+                                size: 0,
+                                type: "folder"
                             });
                         }
                     });

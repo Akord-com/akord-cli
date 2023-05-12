@@ -149,6 +149,15 @@ export class AkordStorage extends Storage {
                 this.dirTrie.set(folderPath, folder.id)
                 if (recursive) {
                     await this.listFormUri(folder.id, folderPath, recursive)
+                } else {
+                    this.objects.push({
+                        lastModified: 0,
+                        size: 0,
+                        name: folder.name,
+                        id: folder.id,
+                        key: folderPath,
+                        type: "folder"
+                    });  
                 }
             }
         }
