@@ -37,7 +37,8 @@ import {
   folderListHandler,
   folderGetHandler,
   stackDownloadHandler,
-  diffHandler
+  diffHandler,
+  displayError
 } from './handlers';
 import './polyfill'
 
@@ -520,6 +521,7 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
+  .fail(displayError)
   .help()
+  .wrap(100)
   .argv;
-  
