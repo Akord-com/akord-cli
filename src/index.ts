@@ -41,6 +41,7 @@ import {
   displayError
 } from './handlers';
 import './polyfill'
+import { logger } from './logger';
 
 const loginCommand = {
   command: 'login <email>',
@@ -521,6 +522,7 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
+  .middleware((argv) => logger.debug("Executed command: " + JSON.stringify(argv)))
   .fail(displayError)
   .help()
   .wrap(100)

@@ -54,7 +54,8 @@ function storeWallet(walletData) {
     storage.setItem("wallet", walletData);
     spinner.info("Your wallet was stored at: ~/.akord/credentials");
   } catch (error) {
-    spinner.fail("Oops, something went wrong when storing your wallet: " + error);
+    spinner.fail("Oops, something went wrong when storing your wallet: " + error?.message);
+    logger.error(error);
     process.exit(0);
   }
 }
@@ -156,7 +157,9 @@ function displayError(msg: string, err: Error, yargs: Argv) {
     spinner.fail()
   }
   if (msg) {
-    spinner.fail(msg)
+    spinner.fail(msg);
+    logger.error(msg)
+    logger.error(err)
   }
   else if (err) {
     spinner.fail(err.message);
@@ -278,8 +281,9 @@ async function loadCredentials(): Promise<Akord> {
       return await Akord.init(wallet)
     }
   } catch (error) {
-    spinner.fail("Oops, something went wrong when loading your wallet: " + error);
-    spinner.info("Make sure that your keyfile is configured: akord wallet:configure --help");
+    logger.error(error)
+    spinner.fail("Oops, something went wrong when loading your wallet");
+    spinner.info("Login first with: akord login {your_email}");
     process.exit(0);
   }
 }
@@ -794,7 +798,6 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
 }
 
 export {
-  CONFIG_STORE_PATH,
   displayError,
   loadCredentials,
   vaultCreateHandler,

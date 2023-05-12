@@ -1,7 +1,8 @@
+import os from 'os';
 import { format, createLogger, transports } from "winston";
-import { CONFIG_STORE_PATH } from "./handlers";
 const { combine, timestamp, prettyPrint } = format;
-const LOGS_PATH = `${CONFIG_STORE_PATH}/logs`
+const LOGS_PATH = `${os.homedir()}/.akord/logs`
+
 
 export const logger = createLogger({
     level: "debug",
