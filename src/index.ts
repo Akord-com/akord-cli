@@ -7,6 +7,7 @@ import {
   vaultArchiveHandler,
   vaultRestoreHandler,
   manifestGenerateHandler,
+  syncHandler,
   stackCreateHandler,
   stackImportHandler,
   stackRenameHandler,
@@ -35,7 +36,9 @@ import {
   stackGetHandler,
   folderListHandler,
   folderGetHandler,
-  stackDownloadHandler
+  stackDownloadHandler,
+  diffHandler,
+  displayError
 } from './handlers';
 import './polyfill'
 
@@ -230,6 +233,48 @@ const stackDeleteCommand = {
       .positional('stackId', { describe: 'stack id' })
   },
   handler: stackDeleteHandler,
+};
+
+const diffCommand = {
+  command: 'diff <source> <destination>',
+  describe: 'check diff between local dir or S3 bucket and Akord vault',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .positional('destination', { describe: 'destination storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+  },
+  handler: diffHandler,
+};
+
+const syncCommand = {
+  command: 'sync <source> <destination>',
+  describe: 'sync local dir or S3 bucket with Akord vault',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .option("a", {
+        alias: "auto-approve",
+        describe: "Skips confirmation step. False by default"
+      })
+      .option("r", {
+        alias: "recursive",
+        describe: "Recursively compares storages (includes files from directories, subdirectories etc.) True by default"
+      })
+      .option("d", {
+        alias: "delete",
+        describe: "Deletes files non existing in source storage from target storage. False by default"
+      })
+      .option("aed", {
+        alias: "allow-empty-dirs",
+        describe: "Empty directories are recreated/deleted. False by default"
+      })
+      .option("eh", {
+        alias: "exclude-hidden",
+        describe: "Exclude hidden directories & files. False by default"
+      })
+  },
+  handler: syncHandler,
 };
 
 const memoCreateCommand = {
@@ -448,6 +493,8 @@ yargs
   .command(<CommandModule><unknown>vaultGetCommand)
   .command(<CommandModule><unknown>vaultListCommand)
   .command(<CommandModule><unknown>manifestGenerateCommand)
+  .command(<CommandModule><unknown>diffCommand)
+  .command(<CommandModule><unknown>syncCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackImportCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
@@ -474,6 +521,7 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
+  .fail(displayError)
   .help()
+  .wrap(100)
   .argv;
-  
