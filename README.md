@@ -23,12 +23,15 @@ akord folder:create <vaultId> "my first folder"
 akord stack:create <vaultId> --file-path "./image.jpeg" --parent-id <folderId>
 ```
 
-Syncing storages can be done 
+Syncing storages can be done with a single command e.g.
 ```
 akord sync s3://bucket_name akord://vault_id
+```
+or
+```
 akord sync some/path/to/files akord://vault_id
 ```
-More examples can be found
+More storage synchronisation examples can be found
 [here](https://github.com/Akord-com/recipes/tree/main/sync)
 
 ## Akord CLI Commands

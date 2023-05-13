@@ -5,7 +5,7 @@ import { ListOptions } from "@akord/akord-js/lib/types/query-options";
 import path from "path";
 import { Readable } from "stream";
 import { loadCredentials } from "../../../handlers";
-import { Storage, StorageObject } from "../types"
+import { ListStorageOptions, Storage, StorageObject } from "../types"
 
 export class AkordStorage extends Storage {
 
@@ -31,10 +31,10 @@ export class AkordStorage extends Storage {
         this.folderId = path[1] || "null"
     }
 
-    public async list(recursive: boolean = true, allowEmptyDirs: boolean = false, excludeHidden: boolean = true): Promise<StorageObject[]> {
+    public async list(options: ListStorageOptions): Promise<StorageObject[]> {
         this.objects = []
         await this.initGuard()
-        await this.listFormUri(this.folderId, "", recursive, allowEmptyDirs, excludeHidden)
+        await this.listFormUri(this.folderId, "", options)
         return this.objects
     }
 
@@ -92,10 +92,10 @@ export class AkordStorage extends Storage {
         return { key, parentId }
     }
 
-    private async listFormUri(uri: string, path: string, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<void> {
+    private async listFormUri(uri: string, path: string, options: ListStorageOptions): Promise<void> {
         const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, { ...this.listOptions, parentId: uri } ), await this.akord.stack.listAll(this.vaultId, { ...this.listOptions, parentId: uri })])
 
-        if (uri && !folders.length && !stacks.length && allowEmptyDirs) {
+        if (uri && !folders.length && !stacks.length && options.allowEmptyDirs) {
             const folder = await this.akord.folder.get(uri)
             const folderPath = path ? `${path}/${folder.name}` : folder.name
             this.objects.push({
@@ -112,7 +112,7 @@ export class AkordStorage extends Storage {
             const version = stack.versions[stack.versions.length - 1]
             const stackPath = path ? `${path}/${stack.name}` : stack.name
             const resourceUri = this.getResourceUri(version.resourceUri, "s3")
-            if (excludeHidden && stack.name.startsWith('.')) {
+            if (!options.includeHidden && stack.name.startsWith('.')) {
                 this.excludedObjects.push({
                     lastModified: 0,
                     size: 0,
@@ -136,7 +136,7 @@ export class AkordStorage extends Storage {
 
         for (const folder of folders) {
             const folderPath = path ? `${path}/${folder.name}` : folder.name
-            if (excludeHidden && folder.name.startsWith('.')) {
+            if (!options.includeHidden && folder.name.startsWith('.')) {
                 this.excludedObjects.push({
                     lastModified: 0,
                     size: 0,
@@ -147,8 +147,8 @@ export class AkordStorage extends Storage {
                 });
             } else {
                 this.dirTrie.set(folderPath, folder.id)
-                if (recursive) {
-                    await this.listFormUri(folder.id, folderPath, recursive)
+                if (options.recursive) {
+                    await this.listFormUri(folder.id, folderPath, options)
                 } else {
                     this.objects.push({
                         lastModified: 0,

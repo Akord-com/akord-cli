@@ -1,13 +1,13 @@
 import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
-import { Storage, StorageObject } from "../types"
+import { ListStorageOptions, Storage, StorageObject } from "../types"
 
 export class FsStorage extends Storage {
 
-    public async list(recursive: boolean = true, allowEmptyDirs: boolean = true, excludeHidden: boolean = true): Promise<StorageObject[]> {
+    public async list(options: ListStorageOptions): Promise<StorageObject[]> {
         this.objects = []
-        await this.listFormUri(this.uri, recursive, allowEmptyDirs, excludeHidden)
+        await this.listFormUri(this.uri, options)
         return this.objects;
     }
 
@@ -43,9 +43,9 @@ export class FsStorage extends Storage {
         });
     }
 
-    private async listFormUri(uri: string, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<void> {
+    private async listFormUri(uri: string, options: ListStorageOptions): Promise<void> {
         const localObjects = await fs.promises.readdir(uri)
-        if (uri && (!localObjects || !localObjects.length) && allowEmptyDirs) {
+        if (uri && (!localObjects || !localObjects.length) && options.allowEmptyDirs) {
             this.objects.push({
                 lastModified: 0,
                 size: 0,
@@ -59,7 +59,7 @@ export class FsStorage extends Storage {
                 const filePath = path.join(uri, childPath);
                 const stats = await fs.promises.stat(filePath);
                 const id = this.toPosixPath(path.relative(this.uri, filePath));
-                if (path.basename(childPath).startsWith('.') && excludeHidden) {
+                if (path.basename(childPath).startsWith('.') && !options.includeHidden) {
                     this.excludedObjects.push({
                         lastModified: stats.mtimeMs,
                         size: stats.size,
@@ -69,8 +69,8 @@ export class FsStorage extends Storage {
                         type: stats.isDirectory() ? "folder" : "file"
                     })
                 } else {
-                    if (stats.isDirectory() && recursive) {
-                        await this.listFormUri(filePath, recursive);
+                    if (stats.isDirectory() && options.recursive) {
+                        await this.listFormUri(filePath, options);
                     } else {
                         this.objects.push({
                             lastModified: stats.mtimeMs,

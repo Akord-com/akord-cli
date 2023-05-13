@@ -1,7 +1,7 @@
 import { GetObjectCommand, ListObjectsV2Command, ListObjectsV2CommandInput, ListObjectsV2CommandOutput, S3Client } from "@aws-sdk/client-s3";
 import { Upload } from "@aws-sdk/lib-storage";
 import { Readable } from "stream";
-import { Storage, StorageObject } from "../types"
+import { ListStorageOptions, Storage, StorageObject } from "../types"
 import stream from 'stream';
 import path from "path";
 
@@ -22,12 +22,12 @@ export class S3Storage extends Storage {
         }
     }
 
-    async list(recursive: boolean = true, allowEmptyDirs?: boolean, excludeHidden?: boolean): Promise<StorageObject[]> {
+    async list(options: ListStorageOptions): Promise<StorageObject[]> {
         let response: ListObjectsV2CommandOutput
         let request: ListObjectsV2CommandInput = {
             Bucket: this.bucket,
             Prefix: this.prefix ? this.prefix : '',
-            Delimiter: recursive ? '' : '/'
+            Delimiter: options.recursive ? '' : '/'
         }
         let nextContinuationToken: string;
         try {
@@ -41,7 +41,15 @@ export class S3Storage extends Storage {
                     response.Contents.forEach(({ Key, LastModified, Size }) => {
                         if (!Key.endsWith(path.posix.sep)) {
                             const key = this.prefix ? Key.replace(this.prefix, '') : Key
-                            if (!excludeHidden || !key.split('/').some(object => object.startsWith('.'))) {
+                            if (!options.includeHidden && key.split('/').some(object => object.startsWith('.'))) {
+                                this.excludedObjects.push({
+                                    id: key,
+                                    key: key,
+                                    name: key,
+                                    lastModified: LastModified.getTime(),
+                                    size: Size
+                                });
+                            } else {
                                 this.objects.push({
                                     id: key,
                                     key: key,
@@ -56,7 +64,16 @@ export class S3Storage extends Storage {
                 if (response.CommonPrefixes !== undefined) {
                     response.CommonPrefixes.forEach(({ Prefix }) => {
                         const key = (this.prefix ? Prefix.replace(this.prefix, '') : Prefix).replace('/', '')
-                        if (!excludeHidden || !key.split('/').some(object => object.startsWith('.'))) {
+                        if (!options.includeHidden && key.split('/').some(object => object.startsWith('.'))) {
+                            this.excludedObjects.push({
+                                id: key,
+                                key: key,
+                                name: key,
+                                lastModified: 0,
+                                size: 0,
+                                type: "folder"
+                            });
+                        } else {
                             this.objects.push({
                                 id: key,
                                 key: key,

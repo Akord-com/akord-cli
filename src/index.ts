@@ -272,17 +272,17 @@ const syncCommand = {
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
-      .option("aed", {
+      .option("e", {
         type: 'boolean', 
         default: false,
-        alias: "allow-empty-dirs",
+        alias: "include-empty-dirs",
         describe: "Empty directories are recreated/deleted. False by default"
       })
-      .option("eh", {
+      .option("-h", {
         type: 'boolean', 
         default: false,
-        alias: "exclude-hidden",
-        describe: "Exclude hidden directories & files. False by default"
+        alias: "include-hidden",
+        describe: "Include hidden directories & files. False by default"
       })
   },
   handler: syncHandler,

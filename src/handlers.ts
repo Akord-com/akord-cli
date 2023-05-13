@@ -459,7 +459,7 @@ async function diffHandler(argv: { source: string, destination: string }) {
   process.exit(0);
 }
 
-async function syncHandler(argv: { source: string, destination: string, dryRun?: boolean, autoApprove?: boolean, delete?: boolean, recursive?: boolean, allowEmptyDirs?: boolean, excludeHidden?: boolean }) {
+async function syncHandler(argv: { source: string, destination: string, dryRun?: boolean, autoApprove?: boolean, delete?: boolean, recursive?: boolean, allowEmptyDirs?: boolean, includeHidden?: boolean }) {
   const source = argv.source;
   const destination = argv.destination;
 
@@ -471,7 +471,7 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
     delete: argv.delete,
     recursive: argv.recursive,
     allowEmptyDirs: argv.allowEmptyDirs,
-    excludeHidden: argv.excludeHidden,
+    includeHidden: argv.includeHidden,
     onApprove: async (diff) => {
       spinner.stop()
       logDiff(diff, { delete: argv.delete })
