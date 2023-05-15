@@ -185,7 +185,7 @@ async function loginHandler(argv: {
   }  
   
   spinner.start("Signing in...")
-  
+
   const { wallet } = await Auth.signIn(email, password);
   await storePassword(email, password);
 
@@ -243,7 +243,7 @@ async function vaultCreateHandler(argv: {
   const { vaultId, transactionId } = await akord.vault.create(name, { termsOfAccess });
   spinner.succeed("Vault successfully created with id: " + vaultId);
   displayResponse(transactionId);
-  process.exit(0);
+  return { vaultId, transactionId }
 }
 
 async function retrievePassword(account: string = "default"): Promise<string> {
