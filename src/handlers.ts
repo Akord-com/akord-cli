@@ -31,6 +31,8 @@ import { logger } from "./logger";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`
+const VAULT_SERVICE_NAME = "akord"
+
 const storage = new FileStorage(CREDENTIALS_STORE_PATH)
 const pbkdf2 = promisify(pbkdf2Cb);
 let spinner: ora.Ora = ora()
@@ -172,12 +174,21 @@ function displayError(msg: string, err: Error, yargs: Argv) {
 
 async function loginHandler(argv: {
   email: string,
+  password?: string
 }) {
   console.log(figlet.textSync("Akord", { horizontalLayout: "full" }));
   const email = argv.email;
-  const password = await retrievePassword(false, email);
+  let password = argv.password;
+
+  if (!password) {
+    password = (await askForPassword()).password;
+  }  
+  
   spinner.start("Signing in...")
+  
   const { wallet } = await Auth.signIn(email, password);
+  await storePassword(email, password);
+
   const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, account: email });
   storeWallet(JSON.stringify(encryptedWallet));
 
@@ -235,32 +246,24 @@ async function vaultCreateHandler(argv: {
   process.exit(0);
 }
 
-async function retrievePassword(useVault: boolean, account: string = "default"): Promise<string> {
-  const service = "akord";
-
+async function retrievePassword(account: string = "default"): Promise<string> {
   let password: string;
-
-  if (useVault) {
     try {
-      password = await keytar.getPassword(service, account);
+      password = await keytar.getPassword(VAULT_SERVICE_NAME, account);
     } catch (err) { }
-
-    if (password) {
-      return password;
-    }
+    return password;
   }
 
-  password = (await askForPassword()).password;
-
+async function storePassword(account: string = "default", password: string): Promise<string> {
   try {
-    await keytar.setPassword(service, account, password);
+    await keytar.setPassword(VAULT_SERVICE_NAME, account, password);
   } catch (err) { }
 
   return password;
 }
 
 async function readEncryptedConfig(config: StoredEncryptedWallet): Promise<StoredWallet> {
-  const password = await retrievePassword(true, config.account);
+  const password = await retrievePassword(config.account);
   const iv = Buffer.from(config.aes.iv, "base64");
   const pbkdf2Settings = { ...config.pbkdf2, salt: Buffer.from(config.pbkdf2.salt, "base64") };
   const key = await deriveKey(password, pbkdf2Settings);
