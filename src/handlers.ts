@@ -2,7 +2,6 @@ import figlet from "figlet";
 import fs from 'fs';
 import path from "path";
 import clc from 'cli-color'
-import ora from 'ora';
 import os from 'os';
 import { promisify } from "util";
 import * as keytar from "keytar";
@@ -27,7 +26,7 @@ import {
 } from "./inquirers";
 import { StorageDiff } from "./sync/storage/types";
 import { Argv } from "yargs";
-import { logger } from "./logger";
+import { isVerbose, logger, spinner } from "./logger";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`
@@ -35,7 +34,6 @@ const VAULT_SERVICE_NAME = "akord"
 
 const storage = new FileStorage(CREDENTIALS_STORE_PATH)
 const pbkdf2 = promisify(pbkdf2Cb);
-let spinner: ora.Ora = ora()
 
 configure();
 
@@ -146,12 +144,20 @@ async function decryptWallet(password: string, storedEncryptedWallet: StoredEncr
   return JSON.parse(decryptedWallet);
 }
 
-function displayResponse(transactionId: string) {
+function displayResponse(transactionId: string, objectId?: string) {
   if (spinner && spinner.isSpinning) {
     spinner.succeed()
   }
-  spinner.succeed("Your transaction has been successfully commited. You can view it in the explorer by visiting the link below:");
-  spinner.info("https://sonar.warp.cc/#/app/interaction/" + transactionId);
+  if (isVerbose) {
+    spinner.succeed("Your transaction has been successfully commited. You can view it in the explorer by visiting the link below:");
+    spinner.info("https://sonar.warp.cc/#/app/interaction/" + transactionId);
+  } else {
+    if (objectId) {
+      console.log(objectId);
+    } else {
+      console.log(transactionId);
+    }
+  }
 }
 
 function displayError(msg: string, err: Error, yargs: Argv) {
@@ -182,8 +188,8 @@ async function loginHandler(argv: {
 
   if (!password) {
     password = (await askForPassword()).password;
-  }  
-  
+  }
+
   spinner.start("Signing in...")
 
   const { wallet } = await Auth.signIn(email, password);
@@ -192,7 +198,7 @@ async function loginHandler(argv: {
   const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, account: email });
   storeWallet(JSON.stringify(encryptedWallet));
 
-  spinner.info("Your wallet address: " + await wallet.getAddress()); 
+  spinner.info("Your wallet address: " + await wallet.getAddress());
   spinner.info("Your wallet public key: " + wallet.publicKey());
   spinner.info("Your wallet signing public key: " + wallet.signingPublicKey());
   process.exit(0);
@@ -233,7 +239,8 @@ async function signupHandler(argv: {
 
 async function vaultCreateHandler(argv: {
   name: string,
-  termsOfAccess: string
+  termsOfAccess: string,
+  verbose: string
 }) {
   const name = argv.name;
   const termsOfAccess = argv.termsOfAccess;
@@ -242,17 +249,17 @@ async function vaultCreateHandler(argv: {
   spinner.start("Setting up new vault...")
   const { vaultId, transactionId } = await akord.vault.create(name, { termsOfAccess });
   spinner.succeed("Vault successfully created with id: " + vaultId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, vaultId);
   return { vaultId, transactionId }
 }
 
 async function retrievePassword(account: string = "default"): Promise<string> {
   let password: string;
-    try {
-      password = await keytar.getPassword(VAULT_SERVICE_NAME, account);
-    } catch (err) { }
-    return password;
-  }
+  try {
+    password = await keytar.getPassword(VAULT_SERVICE_NAME, account);
+  } catch (err) { }
+  return password;
+}
 
 async function storePassword(account: string = "default", password: string): Promise<string> {
   try {
@@ -495,8 +502,7 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
       if (spinner && spinner.isSpinning) {
         if (error) {
           spinner.fail()
-          spinner = ora(progress)
-          spinner.start()
+          spinner.start(progress)
           spinner.fail()
           return
         }
@@ -504,8 +510,7 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
           spinner.succeed()
         }
       }
-      spinner = ora(progress)
-      spinner.start()
+      spinner.start(progress)
     },
     onDone: () => {
       if (spinner && spinner.isSpinning) {
@@ -801,6 +806,7 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
 }
 
 export {
+  spinner,
   displayError,
   loadCredentials,
   vaultCreateHandler,

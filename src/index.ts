@@ -41,7 +41,7 @@ import {
   displayError
 } from './handlers';
 import './polyfill'
-import { logger } from './logger';
+import { logger, muteSpinner } from './logger';
 
 const loginCommand = {
   command: 'login <email>',
@@ -532,6 +532,17 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
+  .option("v", {
+    type: 'boolean', 
+    default: true,
+    alias: "verbose",
+    describe: "Prints output messages to stdout"
+  })
+  .middleware((argv) => {
+    if (!argv.verbose) {
+      muteSpinner()
+    }
+  })
   .middleware((argv) => logger.debug("Executed command: " + JSON.stringify(argv)))
   .fail(displayError)
   .help()
