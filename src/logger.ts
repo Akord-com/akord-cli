@@ -10,7 +10,7 @@ const redact = makeRedact('[REDACTED]')
 export const logger = createLogger({
     level: "debug",
     format: combine(
-        format(info => redact.map(info))(),
+        //format(info => redact.map(info))(),
         timestamp({
             format: "MMM-DD-YYYY HH:mm:ss",
         }),
