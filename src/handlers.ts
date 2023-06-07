@@ -6,7 +6,6 @@ import os from 'os';
 import { promisify } from "util";
 import * as keytar from "keytar";
 import { Akord, Auth } from "@akord/akord-js"
-import { FileStorage } from "@akord/akord-auth"
 import { AkordWallet } from "@akord/crypto";
 import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
 import { sync } from './sync';
@@ -27,6 +26,7 @@ import {
 import { StorageDiff } from "./sync/storage/types";
 import { Argv } from "yargs";
 import { isVerbose, logger, spinner } from "./logger";
+import { FileStorage } from "./store";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`

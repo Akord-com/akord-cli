@@ -40,7 +40,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@akord/akord-js": "4.3.0-beta.4",
+    "@akord/akord-js": "4.11.1",
     "@akord/crypto": "0.10.5",
     "@aws-sdk/client-s3": "^3.327.0",
     "@aws-sdk/lib-storage": "^3.327.0",
@@ -50,6 +50,7 @@
     "figlet": "^1.5.2",
     "inquirer": "^8.2.0",
     "keytar": "^7.9.0",
+    "redact-secrets": "^1.0.0",
     "winston": "^3.8.2",
     "yargs": "^17.3.1"
   },
