@@ -1,6 +1,5 @@
 import figlet from "figlet";
 import fs from 'fs';
-import path from "path";
 import clc from 'cli-color'
 import os from 'os';
 import { promisify } from "util";
@@ -13,9 +12,7 @@ import formatStorage from './sync/storage/formatter';
 import { AkordStorage } from './sync/storage/impl/akord-storage';
 import {
   askForFilePath,
-  askForTransactionId,
   askForStackName,
-  askForUploadType,
   askForRole,
   askForPassword,
   askForCode,
@@ -27,6 +24,7 @@ import { StorageDiff } from "./sync/storage/types";
 import { Argv } from "yargs";
 import { isVerbose, logger, spinner } from "./logger";
 import { FileStorage } from "./store";
+import { NodeJs } from "@akord/akord-js/lib/types/file";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`
@@ -334,12 +332,16 @@ async function vaultRestoreHandler(argv: { vaultId: string }) {
 
 async function stackCreateHandler(argv: {
   vaultId: string,
+  filePath?: string,
   parentId?: string,
   name: string
 }) {
-  const vaultId = argv.vaultId
-  const parentId = argv.parentId
-  const file = <any>(await _getFile(argv));
+  const vaultId = argv.vaultId;
+  const parentId = argv.parentId;
+
+  const filePath = argv.filePath || (await askForFilePath()).filePath;
+  const file = await NodeJs.File.fromPath(filePath);
+
   const name = argv.name || file.name || (await askForStackName(file.name)).name;
 
   const akord = await loadCredentials();
@@ -365,40 +367,20 @@ async function stackImportHandler(argv: {
   process.exit(0);
 }
 
-async function stackUploadRevisionHandler(argv: { stackId: string }) {
+async function stackUploadRevisionHandler(argv: {
+  stackId: string,
+  filePath?: string
+}) {
   const stackId = argv.stackId;
-  const file = await _getFile(argv);
+
+  const filePath = argv.filePath || (await askForFilePath()).filePath;
+  const file = await NodeJs.File.fromPath(filePath);
 
   const akord = await loadCredentials();
   spinner.start("Uploading new stack version...")
   const { transactionId } = await akord.stack.uploadRevision(stackId, file);
   displayResponse(transactionId);
   process.exit(0);
-}
-
-async function _getFile(argv: any) {
-  let file = <any>{};
-  if (argv.public) {
-    if (argv.filePath) {
-      file = getFileFromPath(argv.filePath);
-    } else if (argv.transactionId) {
-      file.resourceTx = argv.transactionId;
-    } else {
-      const { uploadType } = await askForUploadType();
-      if (uploadType === 'transaction id') {
-        const { transactionId } = await askForTransactionId();
-        file.resourceTx = transactionId;
-      } else {
-        const { filePath } = await askForFilePath();
-        file = getFileFromPath(filePath);
-      }
-    }
-    file.public = true
-  } else {
-    const filePath = argv.filePath || (await askForFilePath()).filePath;
-    file = getFileFromPath(filePath);
-  }
-  return file;
 }
 
 async function stackRenameHandler(argv: {
@@ -625,19 +607,6 @@ async function folderDeleteHandler(argv: { folderId: string }) {
   const { transactionId } = await akord.folder.delete(folderId);
   displayResponse(transactionId);
   process.exit(0);
-}
-
-function getFileFromPath(filePath: string) {
-  let file = <any>{};
-  if (!fs.existsSync(filePath)) {
-    spinner.fail("Could not find a file in your filesystem: " + filePath);
-    process.exit(0);
-  }
-  const stats = fs.statSync(filePath);
-  file.size = stats.size;
-  file.data = fs.readFileSync(filePath);
-  file.name = path.basename(filePath);
-  return file;
 }
 
 async function membershipInviteHandler(argv: {
