@@ -125,7 +125,7 @@ const manifestGenerateCommand = {
 
 const stackCreateCommand = {
   command: 'stack:create <vaultId>',
-  describe: 'create a new stack',
+  describe: 'create a new stack from a file path',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
@@ -133,11 +133,6 @@ const stackCreateCommand = {
         alias: "file-path",
         describe: "file path"
       })
-      .option("transaction-id", {
-        alias: "transaction-id",
-        describe: "id of the transaction with the file data"
-      })
-      .option('public', { type: 'boolean', default: false })
       .option("n", {
         alias: "name",
         describe: "name for the new stack, default to the file name"

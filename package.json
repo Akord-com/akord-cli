@@ -40,7 +40,7 @@
     "node": ">=16.0.0"
   },
   "dependencies": {
-    "@akord/akord-js": "4.11.1",
+    "@akord/akord-js": "4.16.1",
     "@akord/crypto": "0.10.5",
     "@aws-sdk/client-s3": "^3.327.0",
     "@aws-sdk/lib-storage": "^3.327.0",

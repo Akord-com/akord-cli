@@ -60,7 +60,7 @@ Commands:
 
   akord manifest:generate                   generate a path manifest for the vault
 
-  akord stack:create <vaultId>              create a new stack
+  akord stack:create <vaultId>              create a new stack from a file path
   akord stack:import <vaultId> <fileTxId>   create a new stack from an existing arweave transaction
   akord stack:rename <stackId> <name>       rename the stack
   akord stack:upload-revision <stackId>     upload new file version to the stack
