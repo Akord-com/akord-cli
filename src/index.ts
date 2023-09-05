@@ -72,12 +72,21 @@ const signupCommand = {
 };
 
 const vaultCreateCommand = {
-  command: 'vault:create <name> [terms]',
+  command: 'vault:create <name>',
   describe: 'create a new vault',
   builder: () => {
     yargs
       .positional('name', { describe: 'name for the new vault' })
-      .positional('terms', { describe: 'if the vault is intended for professional or legal use, you can add terms of access and they must be digitally signed before accessing the vault', default: null })
+      .option('description', {
+        type: "string",
+        describe: 'a description for your vault',
+        default: null
+      })
+      .option('terms', {
+        type: "string",
+        describe: 'if the vault is intended for professional or legal use, you can add terms of access and they must be digitally signed before accessing the vault',
+        default: null
+      })
       .option("public", {
         type: "boolean",
         default: false,

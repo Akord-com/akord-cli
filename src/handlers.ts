@@ -238,14 +238,15 @@ async function signupHandler(argv: {
 async function vaultCreateHandler(argv: {
   name: string,
   termsOfAccess: string,
+  description: string,
   verbose: string,
   public: boolean
 }) {
-  const { name, termsOfAccess, public: isPublic } = argv;
+  const { name, termsOfAccess, public: isPublic, description } = argv;
 
   const akord = await loadCredentials();
   spinner.start("Setting up new vault...")
-  const { vaultId, transactionId } = await akord.vault.create(name, { termsOfAccess, public: isPublic });
+  const { vaultId, transactionId } = await akord.vault.create(name, { description, termsOfAccess, public: isPublic });
   spinner.succeed("Vault successfully created with id: " + vaultId);
   displayResponse(transactionId, vaultId);
   return { vaultId, transactionId }
