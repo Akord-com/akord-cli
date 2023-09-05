@@ -78,6 +78,11 @@ const vaultCreateCommand = {
     yargs
       .positional('name', { describe: 'name for the new vault' })
       .positional('terms', { describe: 'if the vault is intended for professional or legal use, you can add terms of access and they must be digitally signed before accessing the vault', default: null })
+      .option("public", {
+        type: "boolean",
+        default: false,
+        describe: "set public vault context, default to private vault"
+      })
   },
   handler: vaultCreateHandler,
 };
@@ -250,31 +255,31 @@ const syncCommand = {
       .positional('source', { describe: 'source storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .option("a", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "auto-approve",
         describe: "Skips confirmation step. False by default"
       })
       .option("r", {
-        type: 'boolean', 
+        type: 'boolean',
         default: true,
         alias: "recursive",
         describe: "Recursively compares storages (includes files from directories, subdirectories etc.) True by default"
       })
       .option("d", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
       .option("e", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "include-empty-dirs",
         describe: "Empty directories are recreated/deleted. False by default"
       })
       .option("-h", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "include-hidden",
         describe: "Include hidden directories & files. False by default"
@@ -528,7 +533,7 @@ yargs
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
   .option("v", {
-    type: 'boolean', 
+    type: 'boolean',
     default: true,
     alias: "verbose",
     describe: "Prints output messages to stdout"
