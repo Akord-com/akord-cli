@@ -38,6 +38,7 @@ export abstract class Storage {
             try {
                 await storage.update(object, (await this.get(object)))
             } catch (e) {
+                logger.log("error", e)
                 options.onProgress(`Failed updating: ${object.key}`, true)
             }
         }

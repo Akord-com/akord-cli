@@ -38,7 +38,8 @@ import {
   folderGetHandler,
   stackDownloadHandler,
   diffHandler,
-  displayError
+  displayError,
+  deployHandler
 } from './handlers';
 import './polyfill'
 import { logger, muteSpinner } from './logger';
@@ -69,6 +70,17 @@ const signupCommand = {
       })
   },
   handler: signupHandler,
+};
+
+const deployCommand = {
+  command: 'deploy <source> [name]',
+  describe: 'deploy your project',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .positional('name', { describe: 'name for the project, if not specified the source folder name is taken', default: null })
+  },
+  handler: deployHandler,
 };
 
 const vaultCreateCommand = {
@@ -534,6 +546,7 @@ const stackDownloadCommand = {
 yargs
   .command(<CommandModule><unknown>loginCommand)
   .command(<CommandModule><unknown>signupCommand)
+  .command(<CommandModule><unknown>deployCommand)
   .command(<CommandModule><unknown>vaultCreateCommand)
   .command(<CommandModule><unknown>vaultRenameCommand)
   .command(<CommandModule><unknown>vaultArchiveCommand)

@@ -18,12 +18,12 @@ export class AkordStorage extends Storage {
     private listOptions = {
         shouldDecrypt: true,
         filter: {
-          status: { ne: status.REVOKED },
-          and: {
-            status: { ne: status.DELETED }
-          }
+            status: { ne: status.REVOKED },
+            and: {
+                status: { ne: status.DELETED }
+            }
         }
-      } as ListOptions;
+    } as ListOptions;
 
     constructor(uri: string) {
         super(uri);
@@ -93,7 +93,7 @@ export class AkordStorage extends Storage {
     }
 
     private async listFormUri(uri: string, path: string, options: ListStorageOptions): Promise<void> {
-        const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, { ...this.listOptions, parentId: uri } ), await this.akord.stack.listAll(this.vaultId, { ...this.listOptions, parentId: uri })])
+        const [folders, stacks] = await Promise.all([await this.akord.folder.listAll(this.vaultId, { ...this.listOptions, parentId: uri }), await this.akord.stack.listAll(this.vaultId, { ...this.listOptions, parentId: uri })])
 
         if (uri && !folders.length && !stacks.length && options.allowEmptyDirs) {
             const folder = await this.akord.folder.get(uri)
@@ -157,7 +157,7 @@ export class AkordStorage extends Storage {
                         id: folder.id,
                         key: folderPath,
                         type: "folder"
-                    });  
+                    });
                 }
             }
         }
