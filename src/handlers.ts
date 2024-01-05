@@ -237,10 +237,13 @@ async function signupHandler(argv: {
 
 async function deployHandler(argv: {
   source: string,
-  name: string
+  name: string,
+  index: string,
+  manifest: string
 }) {
-  const source = argv.source;
+  const { source, index } = argv;
   let name = argv.name;
+  let manifest = argv.manifest;
 
   if (!name) {
     let sourceSplit = source.split('/');
@@ -267,8 +270,14 @@ async function deployHandler(argv: {
   const diff = await syncHandler({ source: source, destination: `akord://${vaultId}`, dryRun: true, autoApprove: true, includeHidden: true, recursive: true }, false);
   if (diff.created.length || diff.updated.length) {
     await syncHandler({ source: source, destination: `akord://${vaultId}`, autoApprove: true, includeHidden: true, recursive: true }, false, false);
-    spinner.info(`Generating manifest file for vault ${name}`);
-    const { object } = await manifestGenerateHandler({ vaultId: vaultId }, false);
+    if (manifest) {
+      spinner.info(`Parsing manifest file for vault ${name}`);
+      const jsonData = fs.readFileSync(manifest, 'utf-8');
+      manifest = JSON.parse(jsonData);
+    } else {
+      spinner.info(`Generating manifest file for vault ${name}`);
+    }
+    const { object } = await manifestGenerateHandler({ vaultId: vaultId, index: index, manifest: manifest }, false);
     const stack = await akord.stack.getVersion(object.id, -1);
     spinner.succeed(`Your deployed website will be reachable in a few minutes here: https://arweave.net/${stack.resourceUri.find(element => element.includes('arweave')).replace('arweave:', '')}`);
   } else {
@@ -533,7 +542,7 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
       }
       const confirmation = argv.autoApprove || (await askForConfirmation()).confirmation;
       if (!confirmation) {
-                return false
+        return false
       }
       return true
     },
@@ -741,11 +750,11 @@ async function vaultGetHandler(argv: { vaultId: string }) {
   process.exit(0);
 }
 
-async function manifestGenerateHandler(argv: { vaultId: string }, exit: boolean = true) {
-  const { vaultId } = argv;
+async function manifestGenerateHandler(argv: { vaultId: string, index: string, manifest: JSON | Object }, exit: boolean = true) {
+  const { vaultId, index, manifest } = argv;
 
   const akord = await loadCredentials();
-  const { transactionId, object } = await akord.manifest.generate(vaultId);
+  const { transactionId, object } = await akord.manifest.generate(vaultId, manifest, index);
   displayResponse(transactionId);
   if (exit) {
     process.exit(0);
