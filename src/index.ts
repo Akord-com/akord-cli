@@ -92,6 +92,11 @@ const vaultCreateCommand = {
         default: false,
         describe: "set public vault context, default to private vault"
       })
+      .option("cloud", {
+        type: "boolean",
+        default: false,
+        describe: "set cloud vault context, default to permanent (arweave) vault"
+      })
   },
   handler: vaultCreateHandler,
 };
@@ -195,11 +200,6 @@ const stackUploadRevisionCommand = {
         alias: "file-path",
         describe: "file path"
       })
-      .option("transaction-id", {
-        alias: "transaction-id",
-        describe: "id of the transaction with the file data"
-      })
-      .option('public', { type: 'boolean', default: false })
   },
   handler: stackUploadRevisionHandler,
 };

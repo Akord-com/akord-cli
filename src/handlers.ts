@@ -240,13 +240,14 @@ async function vaultCreateHandler(argv: {
   termsOfAccess: string,
   description: string,
   verbose: string,
-  public: boolean
+  public: boolean,
+  cloud: boolean
 }) {
-  const { name, termsOfAccess, public: isPublic, description } = argv;
+  const { name, termsOfAccess, public: isPublic, description, cloud } = argv;
 
   const akord = await loadCredentials();
   spinner.start("Setting up new vault...")
-  const { vaultId, transactionId } = await akord.vault.create(name, { description, termsOfAccess, public: isPublic });
+  const { vaultId, transactionId } = await akord.vault.create(name, { description, termsOfAccess, public: isPublic, cloud });
   spinner.succeed("Vault successfully created with id: " + vaultId);
   displayResponse(transactionId, vaultId);
   return { vaultId, transactionId }
@@ -763,14 +764,14 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     process.exit(0);
   }
   const akord = await loadCredentials();
-  const { name, data } = await akord.stack.getVersion(stackId, +version);
+  const { name, data } = await akord.stack.getVersion(stackId, +version, { responseType: "arraybuffer" });
   if (!filePath) {
     filePath = process.cwd() + "/" + name;
     if (fs.existsSync(filePath)) {
       filePath = process.cwd() + "/" + randomUUID() + "-" + name;
     }
   }
-  fs.writeFileSync(filePath, Buffer.from(data));
+  fs.writeFileSync(filePath, Buffer.from(data as ArrayBuffer));
   spinner.fail("The file was successfully downloaded, decrypted & stored in: " + filePath);
   process.exit(0);
 }
