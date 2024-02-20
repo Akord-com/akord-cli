@@ -148,7 +148,7 @@ function displayResponse(transactionId: string, cloud?: boolean) {
   }
   if (isVerbose) {
     if (!cloud) {
-      spinner.succeed("Your transaction has been successfully commited. You can view it in the explorer by visiting the link below:");
+      spinner.succeed("Your transaction has been successfully committed. You can view it in the explorer by visiting the link below:");
       spinner.info("https://sonar.warp.cc/#/app/interaction/" + transactionId);
     }
   } else {
