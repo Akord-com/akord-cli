@@ -493,7 +493,8 @@ const stackDownloadCommand = {
       .positional('stackId', { describe: 'stack id' })
       .option("v", {
         alias: "file-version",
-        describe: "file version"
+        describe: "file version",
+        default: undefined
       })
       .option("f", {
         alias: "file-path",
