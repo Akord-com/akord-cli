@@ -492,6 +492,7 @@ const stackDownloadCommand = {
     yargs
       .positional('stackId', { describe: 'stack id' })
       .option("v", {
+        type: 'number',
         alias: "file-version",
         describe: "file version",
         default: undefined
@@ -499,6 +500,12 @@ const stackDownloadCommand = {
       .option("f", {
         alias: "file-path",
         describe: "file path"
+      })
+      .option("o", {
+        type: 'boolean',
+        alias: "override",
+        describe: "override content for the given file path",
+        default: false
       })
   },
   handler: stackDownloadHandler,
@@ -542,7 +549,7 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
-  .option("v", {
+  .option("verbose", {
     type: 'boolean',
     default: true,
     alias: "verbose",

@@ -762,17 +762,22 @@ async function membershipListHandler(argv: { vaultId: string }) {
   process.exit(0);
 }
 
-async function stackDownloadHandler(argv: { stackId: string, fileVersion: string, filePath: string }) {
+async function stackDownloadHandler(argv: { stackId: string, fileVersion: number, filePath: string, override: boolean }) {
   const stackId = argv.stackId;
   const version = argv.fileVersion;
+  const shouldOverride = argv.override;
   let filePath = argv.filePath;
 
-  if (filePath && fs.existsSync(filePath)) {
-    spinner.fail("File within the given path already exist, please choose a different path and try again.");
+  const akord = await loadCredentials();
+
+  spinner.start("Downloading file...");
+
+  if (filePath && fs.existsSync(filePath) && !shouldOverride) {
+    spinner.fail("File within the given path already exists, please choose a different path or use override option.");
     process.exit(0);
   }
-  const akord = await loadCredentials();
-  const { name, data } = await akord.stack.getVersion(stackId, +version, { responseType: "arraybuffer" });
+
+  const { name, data } = await akord.stack.getVersion(stackId, version, { responseType: "arraybuffer" });
   if (!filePath) {
     filePath = process.cwd() + "/" + name;
     if (fs.existsSync(filePath)) {
@@ -780,7 +785,9 @@ async function stackDownloadHandler(argv: { stackId: string, fileVersion: string
     }
   }
   fs.writeFileSync(filePath, Buffer.from(data as ArrayBuffer));
-  spinner.fail("The file was successfully downloaded, decrypted & stored in: " + filePath);
+
+  spinner.info("Downloaded version: " + (version !== undefined ? version : "latest"));
+  spinner.succeed("The file was successfully downloaded & stored in: " + filePath);
   process.exit(0);
 }
 
