@@ -25,6 +25,7 @@ import { Argv } from "yargs";
 import { isVerbose, logger, spinner } from "./logger";
 import { FileStorage } from "./store";
 import { NodeJs } from "@akord/akord-js/lib/types/file";
+import { AKORD_ENV } from "./config";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`
@@ -36,7 +37,7 @@ const pbkdf2 = promisify(pbkdf2Cb);
 configure();
 
 function configure() {
-  Auth.configure({ storage: storage })
+  Auth.configure({ storage: storage, env: AKORD_ENV });
   if (!fs.existsSync(CONFIG_STORE_PATH)) {
     fs.mkdirSync(CONFIG_STORE_PATH, { recursive: true });
   } else {
@@ -188,6 +189,7 @@ async function loginHandler(argv: {
 
   spinner.start("Signing in...")
 
+  Auth.configure({ env: AKORD_ENV });
   const { wallet } = await Auth.signIn(email, password);
   await storePassword(email, password);
 
@@ -224,6 +226,7 @@ async function signupHandler(argv: {
   }
 
   spinner.start("Setting up Akord account for you...")
+  Auth.configure({ env: AKORD_ENV });
   await Auth.signUp(email, password, { clientType: "CLI" });
 
   spinner.succeed("Your account was successfully created. We have sent you the verification code.");
@@ -286,7 +289,7 @@ async function loadCredentials(): Promise<Akord> {
       const walletData = await readEncryptedConfig(encryptedWallet);
       const wallet = new AkordWallet(walletData.mnemonic);
       await (<AkordWallet>wallet).deriveKeys();
-      return await Akord.init(wallet)
+      return await Akord.init(wallet, { env: AKORD_ENV });
     }
   } catch (error) {
     logger.error(error)
