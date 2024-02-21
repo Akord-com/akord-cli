@@ -6,6 +6,7 @@ import path from "path";
 import { Readable } from "stream";
 import { loadCredentials } from "../../../handlers";
 import { ListStorageOptions, Storage, StorageObject } from "../types"
+import fs from 'fs';
 
 export class AkordStorage extends Storage {
 
@@ -40,10 +41,8 @@ export class AkordStorage extends Storage {
 
     public async get(object: StorageObject): Promise<Readable> {
         await this.initGuard()
-        // TODO: use streams
-        const { data } = await this.akord.stack.getVersion(object.id, undefined, { responseType: "arraybuffer"})
-        const buffer = Buffer.from(new Uint8Array(data as any))
-        return Readable.from(buffer)
+        const filePath = await this.akord.stack.download(object.id);
+        return Promise.resolve(fs.createReadStream(filePath));
     }
 
     public async create(object: StorageObject, stream?: Readable): Promise<void> {
