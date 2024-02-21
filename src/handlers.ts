@@ -12,7 +12,6 @@ import formatStorage from './sync/storage/formatter';
 import { AkordStorage } from './sync/storage/impl/akord-storage';
 import {
   askForFilePath,
-  askForStackName,
   askForRole,
   askForPassword,
   askForCode,
@@ -336,20 +335,20 @@ async function vaultRestoreHandler(argv: { vaultId: string }) {
 async function stackCreateHandler(argv: {
   vaultId: string,
   filePath?: string,
-  parentId?: string,
-  name: string
+  fileType?: string,
+  fileName?: string,
+  parentId?: string
 }) {
   const vaultId = argv.vaultId;
   const parentId = argv.parentId;
 
   const filePath = argv.filePath || (await askForFilePath()).filePath;
-  const file = await NodeJs.File.fromPath(filePath);
-
-  const name = argv.name || file.name || (await askForStackName(file.name)).name;
+  const fileType = argv.fileType;
 
   const akord = await loadCredentials();
-  spinner.start("Creating new stack...")
-  const { stackId, transactionId, uri, object } = await akord.stack.create(vaultId, file, name, { parentId });
+  spinner.start("Creating new stack...");
+  const { stackId, transactionId, uri, object }
+    = await akord.stack.create(vaultId, filePath, { parentId, name: argv.fileName, mimeType: fileType });
   spinner.succeed("Stack successfully created with id: " + stackId);
   displayResponse(transactionId, object.__cloud__);
   if (!object.__cloud__) {
@@ -376,16 +375,20 @@ async function stackImportHandler(argv: {
 
 async function stackUploadRevisionHandler(argv: {
   stackId: string,
-  filePath?: string
+  filePath?: string,
+  fileType?: string,
+  fileName?: string,
 }) {
   const stackId = argv.stackId;
 
   const filePath = argv.filePath || (await askForFilePath()).filePath;
-  const file = await NodeJs.File.fromPath(filePath);
+  const fileType = argv.fileType;
+  const fileName = argv.fileName;
 
   const akord = await loadCredentials();
-  spinner.start("Uploading new stack version...")
-  const { transactionId, uri, object } = await akord.stack.uploadRevision(stackId, file);
+  spinner.start("Uploading new stack version...");
+  const { transactionId, uri, object }
+    = await akord.stack.uploadRevision(stackId, filePath, { name: fileName, mimeType: fileType });
   displayResponse(transactionId, object.__cloud__);
   if (!object.__cloud__) {
     spinner.info("Once the transaction is accepted on Arweave network (it takes 5-15 minutes on average),");

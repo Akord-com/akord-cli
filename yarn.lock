@@ -10,13 +10,13 @@
     "@akord/crypto" "0.10.0"
     amazon-cognito-identity-js "6.1.2"
 
-"@akord/akord-js@5.0.0-beta.69":
-  version "5.0.0-beta.69"
-  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-5.0.0-beta.69.tgz#79a19e625fb948f3b295838f4cc02b770c137cd2"
-  integrity sha512-Tw2TChOeyqS8qupX+KigdfSNDEfNMdHuW9jdWvTz5LrHKNH5F3Ytkr28p2dR1bLyRdU0wKwzUKWpoT19PSp6LA==
+"@akord/akord-js@5.0.0-beta.72":
+  version "5.0.0-beta.72"
+  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-5.0.0-beta.72.tgz#5993989ae7b4342a802f850a11a30c19b7ed7ca5"
+  integrity sha512-VLdBvc9g+IDMyWvYt4lWfnFB/CSWoash3VMBoCtF+QI8CRMhU1qo4h75ClwB3/jDACBRKDqLc6NhqWTI9SKtGg==
   dependencies:
     "@akord/akord-auth" "0.29.2"
-    "@akord/crypto" "0.20.3"
+    "@akord/crypto" "0.20.4"
     "@akord/ts-cacheable" "1.0.13"
     "@esm2cjs/p-queue" "^7.3.0"
     axios "^1.6.2"
@@ -50,10 +50,10 @@
     reflect-metadata "^0.1.13"
     tweetnacl "^1.0.3"
 
-"@akord/crypto@0.20.3":
-  version "0.20.3"
-  resolved "https://registry.yarnpkg.com/@akord/crypto/-/crypto-0.20.3.tgz#566268ce961113ce9c722fa24cd23a6b787ab310"
-  integrity sha512-4CQOU4A8sk/jP4m+jZnWArKZzITt8yhWfOm0Liv5Alvth1LetURQGH2N36lT9dja5koim3HxvBWKQ+7iq+KlFg==
+"@akord/crypto@0.20.4":
+  version "0.20.4"
+  resolved "https://registry.yarnpkg.com/@akord/crypto/-/crypto-0.20.4.tgz#fc4fe409ec535d90c5ffdc4c7abc35169f16032f"
+  integrity sha512-yFE8qzrqnoQbDePAAGO2Y5JejnU9walK1DNQ7ZywIzkdzaJ5knDYwOMzWylD5yXUON/d+bbZOfMtJfP8RuikrQ==
   dependencies:
     "@akord/browser-level" "^1.0.2"
     bip39 "^3.1.0"
@@ -3237,11 +3237,6 @@ domexception@^2.0.1:
   integrity sha512-yxJ2mFy/sibVQlu5qHjOkf9J3K6zgmCxgJ94u2EdvDOV09H+32LtRswEcUsmUWN72pVLOEnTSRaIVVzVQgS0dg==
   dependencies:
     webidl-conversions "^5.0.0"
-
-dotenv@^16.4.4:
-  version "16.4.4"
-  resolved "https://registry.npmjs.org/dotenv/-/dotenv-16.4.4.tgz"
-  integrity sha512-XvPXc8XAQThSjAbY6cQ/9PcBXmFoWuw1sQ3b8HqUCR6ziGXjkTi//kB9SWa2UwqlgdAIuRqAa/9hVljzPehbYg==
 
 electron-to-chromium@^1.4.284:
   version "1.4.315"

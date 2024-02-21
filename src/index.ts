@@ -152,6 +152,16 @@ const stackCreateCommand = {
         alias: "file-path",
         describe: "file path"
       })
+      .option("t", {
+        alias: "file-type",
+        describe: "file mime type, default to the mime type retrieved from provided file path",
+        default: undefined
+      })
+      .option("n", {
+        alias: "file-name",
+        describe: "file name, default to the file name from provided file path",
+        default: undefined
+      })
       .option("n", {
         alias: "name",
         describe: "name for the new stack, default to the file name"
@@ -199,6 +209,16 @@ const stackUploadRevisionCommand = {
       .option("f", {
         alias: "file-path",
         describe: "file path"
+      })
+      .option("t", {
+        alias: "file-type",
+        describe: "file mime type, default to the mime type retrieved from provided file path",
+        default: undefined
+      })
+      .option("n", {
+        alias: "file-name",
+        describe: "file name, default to the file name from provided file path",
+        default: undefined
       })
   },
   handler: stackUploadRevisionHandler,

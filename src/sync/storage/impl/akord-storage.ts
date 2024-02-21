@@ -52,7 +52,7 @@ export class AkordStorage extends Storage {
             await this.akord.folder.create(this.vaultId, key, { parentId })
         } else {
             const file = await NodeJs.File.fromReadable(stream, key, object.mimeType)
-            await this.akord.stack.create(this.vaultId, file, key, { parentId })
+            await this.akord.stack.create(this.vaultId, file, { parentId })
         }
     }
 
