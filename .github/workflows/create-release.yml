@@ -38,7 +38,7 @@ jobs:
       uses: anothrNick/github-tag-action@1.64.0
       env:
         GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
-        WITH_V: false
+        WITH_V: true
 
     - name: Create GitHub Release
       uses: actions/create-release@v1
