@@ -1,0 +1,1 @@
+export const AKORD_ENV = "v2";

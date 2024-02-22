@@ -10,17 +10,6 @@ const askForFilePath = async () => {
   ]);
 };
 
-const askForStackName = async (name: string): Promise<{ name: string }> => {
-  return inquirer.prompt([
-    {
-      name: 'name',
-      type: 'input',
-      message: `Type stack name:`,
-      default: name
-    },
-  ]);
-};
-
 const askForPassword = async (): Promise<{ password: string }> => {
   return inquirer.prompt([
     {
@@ -89,7 +78,6 @@ const askForRole = async () => {
 export {
   askForConfirmation,
   askForFilePath,
-  askForStackName,
   askForRole,
   askForPassword,
   askForCode,
