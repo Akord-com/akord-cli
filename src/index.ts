@@ -72,12 +72,31 @@ const signupCommand = {
 };
 
 const vaultCreateCommand = {
-  command: 'vault:create <name> [terms]',
+  command: 'vault:create <name>',
   describe: 'create a new vault',
   builder: () => {
     yargs
       .positional('name', { describe: 'name for the new vault' })
-      .positional('terms', { describe: 'if the vault is intended for professional or legal use, you can add terms of access and they must be digitally signed before accessing the vault', default: null })
+      .option('description', {
+        type: "string",
+        describe: 'a description for your vault',
+        default: null
+      })
+      .option('terms', {
+        type: "string",
+        describe: 'if the vault is intended for professional or legal use, you can add terms of access and they must be digitally signed before accessing the vault',
+        default: null
+      })
+      .option("public", {
+        type: "boolean",
+        default: false,
+        describe: "set public vault context, default to private vault"
+      })
+      .option("cloud", {
+        type: "boolean",
+        default: false,
+        describe: "set cloud vault context, default to permanent (arweave) vault"
+      })
   },
   handler: vaultCreateHandler,
 };
@@ -133,6 +152,16 @@ const stackCreateCommand = {
         alias: "file-path",
         describe: "file path"
       })
+      .option("t", {
+        alias: "file-type",
+        describe: "file mime type, default to the mime type retrieved from provided file path",
+        default: undefined
+      })
+      .option("n", {
+        alias: "file-name",
+        describe: "file name, default to the file name from provided file path",
+        default: undefined
+      })
       .option("n", {
         alias: "name",
         describe: "name for the new stack, default to the file name"
@@ -181,11 +210,16 @@ const stackUploadRevisionCommand = {
         alias: "file-path",
         describe: "file path"
       })
-      .option("transaction-id", {
-        alias: "transaction-id",
-        describe: "id of the transaction with the file data"
+      .option("t", {
+        alias: "file-type",
+        describe: "file mime type, default to the mime type retrieved from provided file path",
+        default: undefined
       })
-      .option('public', { type: 'boolean', default: false })
+      .option("n", {
+        alias: "file-name",
+        describe: "file name, default to the file name from provided file path",
+        default: undefined
+      })
   },
   handler: stackUploadRevisionHandler,
 };
@@ -250,31 +284,31 @@ const syncCommand = {
       .positional('source', { describe: 'source storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .positional('destination', { describe: 'destination storage used in synchronisation. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
       .option("a", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "auto-approve",
         describe: "Skips confirmation step. False by default"
       })
       .option("r", {
-        type: 'boolean', 
+        type: 'boolean',
         default: true,
         alias: "recursive",
         describe: "Recursively compares storages (includes files from directories, subdirectories etc.) True by default"
       })
       .option("d", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "delete",
         describe: "Deletes files non existing in source storage from target storage. False by default"
       })
       .option("e", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "include-empty-dirs",
         describe: "Empty directories are recreated/deleted. False by default"
       })
       .option("-h", {
-        type: 'boolean', 
+        type: 'boolean',
         default: false,
         alias: "include-hidden",
         describe: "Include hidden directories & files. False by default"
@@ -478,12 +512,20 @@ const stackDownloadCommand = {
     yargs
       .positional('stackId', { describe: 'stack id' })
       .option("v", {
+        type: 'number',
         alias: "file-version",
-        describe: "file version"
+        describe: "file version",
+        default: undefined
       })
       .option("f", {
         alias: "file-path",
         describe: "file path"
+      })
+      .option("o", {
+        type: 'boolean',
+        alias: "override",
+        describe: "override content for the given file path",
+        default: false
       })
   },
   handler: stackDownloadHandler,
@@ -527,8 +569,8 @@ yargs
   .command(<CommandModule><unknown>membershipRevokeCommand)
   .command(<CommandModule><unknown>membershipListCommand)
   .demandCommand()
-  .option("v", {
-    type: 'boolean', 
+  .option("verbose", {
+    type: 'boolean',
     default: true,
     alias: "verbose",
     describe: "Prints output messages to stdout"

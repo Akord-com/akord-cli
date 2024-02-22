@@ -12,7 +12,6 @@ import formatStorage from './sync/storage/formatter';
 import { AkordStorage } from './sync/storage/impl/akord-storage';
 import {
   askForFilePath,
-  askForStackName,
   askForRole,
   askForPassword,
   askForCode,
@@ -25,6 +24,7 @@ import { Argv } from "yargs";
 import { isVerbose, logger, spinner } from "./logger";
 import { FileStorage } from "./store";
 import { NodeJs } from "@akord/akord-js/lib/types/file";
+import { AKORD_ENV } from "./config";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
 const CREDENTIALS_STORE_PATH = `${CONFIG_STORE_PATH}/credentials`
@@ -36,7 +36,7 @@ const pbkdf2 = promisify(pbkdf2Cb);
 configure();
 
 function configure() {
-  Auth.configure({ storage: storage })
+  Auth.configure({ storage: storage, env: AKORD_ENV });
   if (!fs.existsSync(CONFIG_STORE_PATH)) {
     fs.mkdirSync(CONFIG_STORE_PATH, { recursive: true });
   } else {
@@ -142,19 +142,17 @@ async function decryptWallet(password: string, storedEncryptedWallet: StoredEncr
   return JSON.parse(decryptedWallet);
 }
 
-function displayResponse(transactionId: string, objectId?: string) {
+function displayResponse(transactionId: string, cloud?: boolean) {
   if (spinner && spinner.isSpinning) {
     spinner.succeed()
   }
   if (isVerbose) {
-    spinner.succeed("Your transaction has been successfully commited. You can view it in the explorer by visiting the link below:");
-    spinner.info("https://sonar.warp.cc/#/app/interaction/" + transactionId);
-  } else {
-    if (objectId) {
-      console.log(objectId);
-    } else {
-      console.log(transactionId);
+    if (!cloud) {
+      spinner.succeed("Your transaction has been successfully committed. You can view it in the explorer by visiting the link below:");
+      spinner.info("https://sonar.warp.cc/#/app/interaction/" + transactionId);
     }
+  } else {
+    console.log(transactionId);
   }
 }
 
@@ -190,6 +188,7 @@ async function loginHandler(argv: {
 
   spinner.start("Signing in...")
 
+  Auth.configure({ env: AKORD_ENV });
   const { wallet } = await Auth.signIn(email, password);
   await storePassword(email, password);
 
@@ -226,6 +225,7 @@ async function signupHandler(argv: {
   }
 
   spinner.start("Setting up Akord account for you...")
+  Auth.configure({ env: AKORD_ENV });
   await Auth.signUp(email, password, { clientType: "CLI" });
 
   spinner.succeed("Your account was successfully created. We have sent you the verification code.");
@@ -238,16 +238,18 @@ async function signupHandler(argv: {
 async function vaultCreateHandler(argv: {
   name: string,
   termsOfAccess: string,
-  verbose: string
+  description: string,
+  verbose: string,
+  public: boolean,
+  cloud: boolean
 }) {
-  const name = argv.name;
-  const termsOfAccess = argv.termsOfAccess;
+  const { name, termsOfAccess, public: isPublic, description, cloud } = argv;
 
   const akord = await loadCredentials();
   spinner.start("Setting up new vault...")
-  const { vaultId, transactionId } = await akord.vault.create(name, { termsOfAccess });
+  const { vaultId, transactionId } = await akord.vault.create(name, { description, termsOfAccess, public: isPublic, cloud });
   spinner.succeed("Vault successfully created with id: " + vaultId);
-  displayResponse(transactionId, vaultId);
+  displayResponse(transactionId, cloud);
   return { vaultId, transactionId }
 }
 
@@ -286,7 +288,7 @@ async function loadCredentials(): Promise<Akord> {
       const walletData = await readEncryptedConfig(encryptedWallet);
       const wallet = new AkordWallet(walletData.mnemonic);
       await (<AkordWallet>wallet).deriveKeys();
-      return await Akord.init(wallet)
+      return await Akord.init(wallet, { env: AKORD_ENV });
     }
   } catch (error) {
     logger.error(error)
@@ -305,8 +307,8 @@ async function vaultRenameHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Renaming your vault...")
-  const { transactionId } = await akord.vault.rename(vaultId, name);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.vault.rename(vaultId, name);
+  displayResponse(transactionId, object.cloud);
   process.exit(0);
 }
 
@@ -315,8 +317,8 @@ async function vaultArchiveHandler(argv: { vaultId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Archiving your vault...")
-  const { transactionId } = await akord.vault.archive(vaultId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.vault.archive(vaultId);
+  displayResponse(transactionId, object.cloud);
   process.exit(0);
 }
 
@@ -325,30 +327,34 @@ async function vaultRestoreHandler(argv: { vaultId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Restoring your vault...")
-  const { transactionId } = await akord.vault.restore(vaultId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.vault.restore(vaultId);
+  displayResponse(transactionId, object.cloud);
   process.exit(0);
 }
 
 async function stackCreateHandler(argv: {
   vaultId: string,
   filePath?: string,
-  parentId?: string,
-  name: string
+  fileType?: string,
+  fileName?: string,
+  parentId?: string
 }) {
   const vaultId = argv.vaultId;
   const parentId = argv.parentId;
 
   const filePath = argv.filePath || (await askForFilePath()).filePath;
-  const file = await NodeJs.File.fromPath(filePath);
-
-  const name = argv.name || file.name || (await askForStackName(file.name)).name;
+  const fileType = argv.fileType;
 
   const akord = await loadCredentials();
-  spinner.start("Creating new stack...")
-  const { stackId, transactionId } = await akord.stack.create(vaultId, file, name, { parentId });
+  spinner.start("Creating new stack...");
+  const { stackId, transactionId, uri, object }
+    = await akord.stack.create(vaultId, filePath, { parentId, name: argv.fileName, mimeType: fileType });
   spinner.succeed("Stack successfully created with id: " + stackId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, object.__cloud__);
+  if (!object.__cloud__) {
+    spinner.info("Once the transaction is accepted on Arweave network (it takes 5-15 minutes on average),");
+    spinner.info("you can access your file on ViewBlock by visiting the following URL: https://viewblock.io/arweave/tx/" + uri);
+  }
   process.exit(0);
 }
 
@@ -361,25 +367,33 @@ async function stackImportHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Importing transaction...")
-  const { stackId, transactionId } = await akord.stack.import(vaultId, fileTxId, { parentId });
+  const { stackId, transactionId, object } = await akord.stack.import(vaultId, fileTxId, { parentId });
   spinner.succeed("Stack successfully created with id: " + stackId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
 async function stackUploadRevisionHandler(argv: {
   stackId: string,
-  filePath?: string
+  filePath?: string,
+  fileType?: string,
+  fileName?: string,
 }) {
   const stackId = argv.stackId;
 
   const filePath = argv.filePath || (await askForFilePath()).filePath;
-  const file = await NodeJs.File.fromPath(filePath);
+  const fileType = argv.fileType;
+  const fileName = argv.fileName;
 
   const akord = await loadCredentials();
-  spinner.start("Uploading new stack version...")
-  const { transactionId } = await akord.stack.uploadRevision(stackId, file);
-  displayResponse(transactionId);
+  spinner.start("Uploading new stack version...");
+  const { transactionId, uri, object }
+    = await akord.stack.uploadRevision(stackId, filePath, { name: fileName, mimeType: fileType });
+  displayResponse(transactionId, object.__cloud__);
+  if (!object.__cloud__) {
+    spinner.info("Once the transaction is accepted on Arweave network (it takes 5-15 minutes on average),");
+    spinner.info("you can access your file on ViewBlock by visiting the following URL: https://viewblock.io/arweave/tx/" + uri);
+  }
   process.exit(0);
 }
 
@@ -392,8 +406,8 @@ async function stackRenameHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Renaming the stack...")
-  const { transactionId } = await akord.stack.rename(stackId, name);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.stack.rename(stackId, name);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -402,8 +416,8 @@ async function stackRevokeHandler(argv: { stackId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Revoking the stack...")
-  const { transactionId } = await akord.stack.revoke(stackId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.stack.revoke(stackId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -412,8 +426,8 @@ async function stackRestoreHandler(argv: { stackId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Restoring the stack...")
-  const { transactionId } = await akord.stack.restore(stackId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.stack.restore(stackId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -422,8 +436,8 @@ async function stackDeleteHandler(argv: { stackId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Deleting the stack...")
-  const { transactionId } = await akord.stack.delete(stackId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.stack.delete(stackId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -436,8 +450,8 @@ async function stackMoveHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Moving the stack...")
-  const { transactionId } = await akord.stack.move(stackId, parentId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.stack.move(stackId, parentId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -528,9 +542,9 @@ async function memoCreateHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Creating memo...")
-  const { memoId, transactionId } = await akord.memo.create(vaultId, message);
+  const { memoId, transactionId, object } = await akord.memo.create(vaultId, message);
   spinner.succeed("Memo successfully created with id: " + memoId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -545,9 +559,9 @@ async function folderCreateHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Creating folder...")
-  const { folderId, transactionId } = await akord.folder.create(vaultId, name, { parentId });
+  const { folderId, transactionId, object } = await akord.folder.create(vaultId, name, { parentId });
   spinner.succeed("Folder successfully created with id: " + folderId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -560,8 +574,8 @@ async function folderRenameHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Renaming the folder...")
-  const { transactionId } = await akord.folder.rename(folderId, name);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.folder.rename(folderId, name);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -574,8 +588,8 @@ async function folderMoveHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Moving the folder...")
-  const { transactionId } = await akord.folder.move(folderId, parentId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.folder.move(folderId, parentId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -584,8 +598,8 @@ async function folderRevokeHandler(argv: { folderId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Revoking the folder...")
-  const { transactionId } = await akord.folder.revoke(folderId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.folder.revoke(folderId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -594,8 +608,8 @@ async function folderRestoreHandler(argv: { folderId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Restoring the folder...")
-  const { transactionId } = await akord.folder.restore(folderId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.folder.restore(folderId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -604,7 +618,7 @@ async function folderDeleteHandler(argv: { folderId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Deleting the folder...")
-  const { transactionId } = await akord.folder.delete(folderId);
+  const { transactionId, object } = await akord.folder.delete(folderId);
   displayResponse(transactionId);
   process.exit(0);
 }
@@ -621,8 +635,8 @@ async function membershipInviteHandler(argv: {
 
   const akord = await loadCredentials();
   spinner.start("Sending the invite...")
-  const { transactionId } = await akord.membership.invite(vaultId, email, role);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.membership.invite(vaultId, email, role);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -631,8 +645,8 @@ async function membershipAcceptHandler(argv: { membershipId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Accepting the invite...")
-  const { transactionId } = await akord.membership.accept(membershipId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.membership.accept(membershipId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -641,8 +655,8 @@ async function membershipRejectHandler(argv: { membershipId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Rejecting the invite...")
-  const { transactionId } = await akord.membership.reject(membershipId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.membership.reject(membershipId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -651,8 +665,8 @@ async function membershipRevokeHandler(argv: { membershipId: string }) {
 
   const akord = await loadCredentials();
   spinner.start("Revoking the member...")
-  const { transactionId } = await akord.membership.revoke(membershipId);
-  displayResponse(transactionId);
+  const { transactionId, object } = await akord.membership.revoke(membershipId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
@@ -664,6 +678,7 @@ async function vaultListHandler() {
     id: vault.id,
     name: vault.name,
     public: vault.public,
+    permanent: !vault.cloud,
     size: vault.size,
     createdAt: vault.createdAt,
   })));
@@ -696,6 +711,7 @@ async function stackListHandler(argv: { vaultId: string }) {
   console.table(response.map((stack) => ({
     id: stack.id,
     name: stack.name,
+    ["latest file uri"]: stack.uri,
     parentId: stack.parentId,
     versions: stack.versions.length,
     status: stack.status,
@@ -752,25 +768,32 @@ async function membershipListHandler(argv: { vaultId: string }) {
   process.exit(0);
 }
 
-async function stackDownloadHandler(argv: { stackId: string, fileVersion: string, filePath: string }) {
+async function stackDownloadHandler(argv: { stackId: string, fileVersion: number, filePath: string, override: boolean }) {
   const stackId = argv.stackId;
   const version = argv.fileVersion;
+  const shouldOverride = argv.override;
   let filePath = argv.filePath;
 
-  if (filePath && fs.existsSync(filePath)) {
-    spinner.fail("File within the given path already exist, please choose a different path and try again.");
+  const akord = await loadCredentials();
+
+  spinner.start("Downloading file...");
+
+  if (filePath && fs.existsSync(filePath) && !shouldOverride) {
+    spinner.fail("File within the given path already exists, please choose a different path or use override option.");
     process.exit(0);
   }
-  const akord = await loadCredentials();
-  const { name, data } = await akord.stack.getVersion(stackId, +version);
+
+  const { name, data } = await akord.stack.getVersion(stackId, version, { responseType: "arraybuffer" });
   if (!filePath) {
     filePath = process.cwd() + "/" + name;
     if (fs.existsSync(filePath)) {
       filePath = process.cwd() + "/" + randomUUID() + "-" + name;
     }
   }
-  fs.writeFileSync(filePath, Buffer.from(data));
-  spinner.fail("The file was successfully downloaded, decrypted & stored in: " + filePath);
+  fs.writeFileSync(filePath, Buffer.from(data as ArrayBuffer));
+
+  spinner.info("Downloaded version: " + (version !== undefined ? version : "latest"));
+  spinner.succeed("The file was successfully downloaded & stored in: " + filePath);
   process.exit(0);
 }
 
