@@ -261,7 +261,7 @@ async function deployHandler(argv: {
     const options = { public: true } as VaultCreateOptions
     ({ vaultId, transactionId } = await akord.vault.create(name, options));
     spinner.succeed("Vault successfully created with id: " + vaultId);
-    displayResponse(transactionId, vaultId);
+    displayResponse(transactionId);
   } else {
     vaultId = vault.id;
     spinner.info(`Vault ${name} already exists [id: ${vaultId}]`);
