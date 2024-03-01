@@ -65,21 +65,6 @@
     tweetnacl "^1.0.3"
     web-streams-polyfill "^3.2.1"
 
-"@akord/crypto@0.20.0":
-  version "0.20.0"
-  resolved "https://registry.yarnpkg.com/@akord/crypto/-/crypto-0.20.0.tgz#bc9685e1a5cc52a00cdbcf10333498db04bda8e2"
-  integrity sha512-wdkRFM4BbzBlzca7yy+GCAMFaGkg4xZ6V0iG6PiDUJvutNRAaqedfactudpUtEhKnqRPMyy4tS4kChhR5kcRgA==
-  dependencies:
-    "@akord/browser-level" "^1.0.2"
-    bip39 "^3.1.0"
-    ethereum-cryptography "^1.2.0"
-    jssha "^3.3.1"
-    libsodium-wrappers "^0.7.11"
-    memory-level "^1.0.0"
-    reflect-metadata "^0.1.13"
-    tweetnacl "^1.0.3"
-    web-streams-polyfill "^3.2.1"
-
 "@akord/ts-cacheable@1.0.13":
   version "1.0.13"
   resolved "https://registry.npmjs.org/@akord/ts-cacheable/-/ts-cacheable-1.0.13.tgz"
