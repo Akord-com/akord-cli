@@ -86,7 +86,7 @@ const deployCommand = {
       })
       .option('index', {
         alias: 'i',
-        default: 'index.html',
+        default: null,
         describe: 'manifest index file, if null: index.html'
       })
       .option('manifest', {
