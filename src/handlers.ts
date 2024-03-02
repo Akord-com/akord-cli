@@ -4,7 +4,7 @@ import clc from 'cli-color'
 import os from 'os';
 import { promisify } from "util";
 import * as keytar from "keytar";
-import { Akord, Auth } from "@akord/akord-js"
+import { Akord, Auth, Vault, VaultCreateOptions } from "@akord/akord-js"
 import { AkordWallet } from "@akord/crypto";
 import { CipherGCMTypes, createCipheriv, createDecipheriv, pbkdf2 as pbkdf2Cb, randomBytes, randomUUID } from "crypto";
 import { sync } from './sync';
@@ -233,6 +233,56 @@ async function signupHandler(argv: {
   await Auth.verifyAccount(email, code);
   spinner.info("Your email was verified! You can now login and use the Akord CLI");
   process.exit(0);
+}
+
+async function deployHandler(argv: {
+  source: string,
+  name: string,
+  index: string,
+  manifest: string
+}) {
+  const { source, index } = argv;
+  let name = argv.name;
+  let manifest = argv.manifest;
+
+  if (!name) {
+    let sourceSplit = source.split('/');
+    name = sourceSplit[sourceSplit.length - 1];
+  }
+
+  const akord = await loadCredentials();
+
+  const vaultsList = await akord.vault.listAll();
+  let vault: Vault | undefined = vaultsList.find(vault => vault.name === name)
+  let vaultId = "";
+  let transactionId = "";
+  if (!vault) {
+    spinner.start("Setting up new vault...")
+    const options = { public: true } as VaultCreateOptions
+    ({ vaultId, transactionId } = await akord.vault.create(name, options));
+    spinner.succeed("Vault successfully created with id: " + vaultId);
+    displayResponse(transactionId);
+  } else {
+    vaultId = vault.id;
+    spinner.info(`Vault ${name} already exists [id: ${vaultId}]`);
+  }
+
+  const diff = await syncHandler({ source: source, destination: `akord://${vaultId}`, dryRun: true, autoApprove: true, includeHidden: true, recursive: true }, false);
+  if (diff.created.length || diff.updated.length) {
+    await syncHandler({ source: source, destination: `akord://${vaultId}`, autoApprove: true, includeHidden: true, recursive: true }, false, false);
+    if (manifest) {
+      spinner.info(`Parsing manifest file for vault ${name}`);
+      const jsonData = fs.readFileSync(manifest, 'utf-8');
+      manifest = JSON.parse(jsonData);
+    } else {
+      spinner.info(`Generating manifest file for vault ${name}`);
+    }
+    const { object } = await manifestGenerateHandler({ vaultId: vaultId, index: index, manifest: manifest }, false);
+    const stack = await akord.stack.getVersion(object.id, -1);
+    spinner.succeed(`Your deployed website will be reachable in a few minutes here: https://arweave.net/${stack.resourceUri.find(element => element.includes('arweave')).replace('arweave:', '')}`);
+  } else {
+    spinner.info('No changes detected - you are up to date');
+  }
 }
 
 async function vaultCreateHandler(argv: {
@@ -465,7 +515,7 @@ async function diffHandler(argv: { source: string, destination: string }) {
   process.exit(0);
 }
 
-async function syncHandler(argv: { source: string, destination: string, dryRun?: boolean, autoApprove?: boolean, delete?: boolean, recursive?: boolean, allowEmptyDirs?: boolean, includeHidden?: boolean }) {
+async function syncHandler(argv: { source: string, destination: string, dryRun?: boolean, autoApprove?: boolean, delete?: boolean, recursive?: boolean, allowEmptyDirs?: boolean, includeHidden?: boolean }, exit: boolean = true, log: boolean = true) {
   const source = argv.source;
   const destination = argv.destination;
 
@@ -480,7 +530,9 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
     includeHidden: argv.includeHidden,
     onApprove: async (diff) => {
       spinner.stop()
-      logDiff(diff, { delete: argv.delete })
+      if (log) {
+        logDiff(diff, { delete: argv.delete })
+      }
       if (!diff.created.length && !diff.updated.length && (!argv.delete || (argv.delete && !diff.deleted.length))) {
         spinner.info("No changes detected. Closing")
         return false
@@ -521,7 +573,11 @@ async function syncHandler(argv: { source: string, destination: string, dryRun?:
     spinner.stop()
     logDiff(diff, { delete: argv.delete })
   }
-  process.exit(0);
+  if (exit) {
+    process.exit(0);
+  } else {
+    return diff;
+  }
 }
 
 const logDiff = (diff: StorageDiff, options: { delete?: boolean } = {}) => {
@@ -694,13 +750,17 @@ async function vaultGetHandler(argv: { vaultId: string }) {
   process.exit(0);
 }
 
-async function manifestGenerateHandler(argv: { vaultId: string }) {
-  const { vaultId } = argv;
+async function manifestGenerateHandler(argv: { vaultId: string, index: string, manifest: JSON | Object }, exit: boolean = true) {
+  const { vaultId, index, manifest } = argv;
 
   const akord = await loadCredentials();
-  const { transactionId } = await akord.manifest.generate(vaultId);
+  const { transactionId, object } = await akord.manifest.generate(vaultId, manifest, index);
   displayResponse(transactionId);
-  process.exit(0);
+  if (exit) {
+    process.exit(0);
+  } else {
+    return { transactionId, object };
+  }
 }
 
 async function stackListHandler(argv: { vaultId: string }) {
@@ -801,6 +861,7 @@ export {
   spinner,
   displayError,
   loadCredentials,
+  deployHandler,
   vaultCreateHandler,
   vaultRenameHandler,
   vaultArchiveHandler,
