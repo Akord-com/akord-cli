@@ -176,10 +176,12 @@ function displayError(msg: string, err: Error, yargs: Argv) {
 
 async function loginHandler(argv: {
   email: string,
-  password?: string
+  password?: string,
+  token?: boolean
 }) {
   console.log(figlet.textSync("Akord", { horizontalLayout: "full" }));
   const email = argv.email;
+  const isTokenResponse = argv.token;
   let password = argv.password;
 
   if (!password) {
@@ -189,15 +191,19 @@ async function loginHandler(argv: {
   spinner.start("Signing in...")
 
   Auth.configure({ env: AKORD_ENV });
-  const { wallet } = await Auth.signIn(email, password);
+  const { wallet, jwt } = await Auth.signIn(email, password);
   await storePassword(email, password);
 
   const encryptedWallet = await encryptWallet(password, { mnemonic: wallet.backupPhrase, account: email });
   storeWallet(JSON.stringify(encryptedWallet));
 
-  spinner.info("Your wallet address: " + await wallet.getAddress());
-  spinner.info("Your wallet public key: " + wallet.publicKey());
-  spinner.info("Your wallet signing public key: " + wallet.signingPublicKey());
+  if (isTokenResponse) {
+    console.log(jwt);
+  } else {
+    spinner.info("Your wallet address: " + await wallet.getAddress());
+    spinner.info("Your wallet public key: " + wallet.publicKey());
+    spinner.info("Your wallet signing public key: " + wallet.signingPublicKey());
+  }
   process.exit(0);
 }
 
