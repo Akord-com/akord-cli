@@ -283,9 +283,8 @@ async function deployHandler(argv: {
     } else {
       spinner.info(`Generating manifest file for vault ${name}`);
     }
-    const { object } = await manifestGenerateHandler({ vaultId: vaultId, index: index, manifest: manifest }, false);
-    const stack = await akord.stack.getVersion(object.id, -1);
-    spinner.succeed(`Your deployed website will be reachable in a few minutes here: https://arweave.net/${stack.resourceUri.find(element => element.includes('arweave')).replace('arweave:', '')}`);
+    const { uri } = await manifestGenerateHandler({ vaultId: vaultId, index: index, manifest: manifest }, false);
+    spinner.succeed(`Your deployed website will be reachable in a few minutes here: https://arweave.net/${uri}`);
   } else {
     spinner.info('No changes detected - you are up to date');
   }
@@ -760,12 +759,15 @@ async function manifestGenerateHandler(argv: { vaultId: string, index: string, m
   const { vaultId, index, manifest } = argv;
 
   const akord = await loadCredentials();
-  const { transactionId, object } = await akord.manifest.generate(vaultId, manifest, index);
-  displayResponse(transactionId);
+  spinner.start("Generating manifest...")
+  const { uri } = await akord.manifest.generate(vaultId, manifest, index);
+  spinner.succeed("Manifest successfully generated.");
+  spinner.succeed("Once the transaction is accepted on Arweave network (it takes 5-15 minutes on average), you can access it here:");
+  spinner.succeed("https://arweave.net/" + uri);
   if (exit) {
     process.exit(0);
   } else {
-    return { transactionId, object };
+    return { uri };
   }
 }
 
