@@ -50,6 +50,7 @@ Commands:
 
   akord diff <sourceUri> <targetUri>        check diff between local dir or S3 bucket and Akord vault
   akord sync <sourceUri> <targetUri>        sync local dir or S3 bucket with Akord vault
+  akord deploy <sourcePath> [name]          deploy project from local dir 
 
   akord vault:create <name> [terms]         create a new vault
   akord vault:rename <vaultId> <name>       update vault name

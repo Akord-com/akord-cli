@@ -38,7 +38,8 @@ import {
   folderGetHandler,
   stackDownloadHandler,
   diffHandler,
-  displayError
+  displayError,
+  deployHandler
 } from './handlers';
 import './polyfill'
 import { logger, muteSpinner } from './logger';
@@ -75,6 +76,31 @@ const signupCommand = {
       })
   },
   handler: signupHandler,
+};
+
+const deployCommand = {
+  command: 'deploy <source> [name] [index] [manifest]',
+  describe: 'deploy your project',
+  builder: () => {
+    yargs
+      .positional('source', { describe: 'source storage used in diff check. supported storages: file system e.g. ".", S3 bucket e.g. "s3://my-bucket" or akord storage e.g. "akord://my-vault-id"' })
+      .option(
+        'name', {
+        alias: 'n',
+        describe: 'name for the project, if not specified the source folder name is taken',
+        default: null
+      })
+      .option('index', {
+        default: null,
+        describe: 'manifest index file, if null: index.html'
+      })
+      .option('manifest', {
+        alias: 'm',
+        default: null,
+        describe: 'manifest file, if provided index-file param is dissmissed'
+      })
+  },
+  handler: deployHandler,
 };
 
 const vaultCreateCommand = {
@@ -139,11 +165,13 @@ const vaultRestoreCommand = {
 };
 
 const manifestGenerateCommand = {
-  command: 'manifest:generate <vaultId>',
+  command: 'manifest:generate <vaultId> [index] [manifest]',
   describe: 'generate a path manifest for the vault',
   builder: () => {
     yargs
       .positional('vaultId', { describe: 'vault id' })
+      .option('index', { describe: 'index file', default: 'index.html' })
+      .option('manifest', { describe: 'manifest file, if provided, index param is dismissed', default: null })
   },
   handler: manifestGenerateHandler,
 };
@@ -540,6 +568,7 @@ const stackDownloadCommand = {
 yargs
   .command(<CommandModule><unknown>loginCommand)
   .command(<CommandModule><unknown>signupCommand)
+  .command(<CommandModule><unknown>deployCommand)
   .command(<CommandModule><unknown>vaultCreateCommand)
   .command(<CommandModule><unknown>vaultRenameCommand)
   .command(<CommandModule><unknown>vaultArchiveCommand)
