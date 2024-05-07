@@ -52,7 +52,13 @@ const loginCommand = {
       .positional('email', { describe: 'email' })
       .option("p", {
         alias: "password",
-        describe: "user password"
+        describe: "user password",
+        default: undefined
+      })
+      .option("t", {
+        alias: "token",
+        describe: "return issued token",
+        default: false
       })
   },
   handler: loginHandler,
