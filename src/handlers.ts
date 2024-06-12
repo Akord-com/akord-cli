@@ -343,7 +343,7 @@ async function loadCredentials(): Promise<Akord> {
       const walletData = await readEncryptedConfig(encryptedWallet);
       const wallet = new AkordWallet(walletData.mnemonic);
       await (<AkordWallet>wallet).deriveKeys();
-      return await Akord.init(wallet, { env: AKORD_ENV });
+      return await Akord.init(wallet, { env: AKORD_ENV, storage });
     }
   } catch (error) {
     logger.error(error)
