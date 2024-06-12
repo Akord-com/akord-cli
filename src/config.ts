@@ -1,1 +1,1 @@
-export const AKORD_ENV = "v2";
+export const AKORD_ENV = "dev";
