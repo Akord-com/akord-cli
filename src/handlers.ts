@@ -23,7 +23,6 @@ import { StorageDiff } from "./sync/storage/types";
 import { Argv } from "yargs";
 import { isVerbose, logger, spinner } from "./logger";
 import { FileStorage } from "./store";
-import { NodeJs } from "@akord/akord-js/lib/types/file";
 import { AKORD_ENV } from "./config";
 
 const CONFIG_STORE_PATH = `${os.homedir()}/.akord`
@@ -190,7 +189,7 @@ async function loginHandler(argv: {
 
   spinner.start("Signing in...")
 
-  Auth.configure({ env: AKORD_ENV });
+  Auth.configure({ env: AKORD_ENV, storage: storage });
   const { wallet, jwt } = await Auth.signIn(email, password);
   await storePassword(email, password);
 
@@ -231,7 +230,7 @@ async function signupHandler(argv: {
   }
 
   spinner.start("Setting up Akord account for you...")
-  Auth.configure({ env: AKORD_ENV });
+  Auth.configure({ env: AKORD_ENV, storage: storage });
   await Auth.signUp(email, password, { clientType: "CLI" });
 
   spinner.succeed("Your account was successfully created. We have sent you the verification code.");
@@ -343,7 +342,7 @@ async function loadCredentials(): Promise<Akord> {
       const walletData = await readEncryptedConfig(encryptedWallet);
       const wallet = new AkordWallet(walletData.mnemonic);
       await (<AkordWallet>wallet).deriveKeys();
-      return await Akord.init(wallet, { env: AKORD_ENV, storage });
+      return new Akord(wallet, { env: AKORD_ENV, storage: storage });
     }
   } catch (error) {
     logger.error(error)
