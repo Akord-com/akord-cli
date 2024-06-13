@@ -680,7 +680,7 @@ async function folderDeleteHandler(argv: { folderId: string }) {
   const akord = await loadCredentials();
   spinner.start("Deleting the folder...")
   const { transactionId, object } = await akord.folder.delete(folderId);
-  displayResponse(transactionId);
+  displayResponse(transactionId, object.__cloud__);
   process.exit(0);
 }
 
