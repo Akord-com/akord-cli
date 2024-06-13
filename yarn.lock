@@ -2,27 +2,28 @@
 # yarn lockfile v1
 
 
-"@akord/akord-auth@0.29.2":
-  version "0.29.2"
-  resolved "https://registry.npmjs.org/@akord/akord-auth/-/akord-auth-0.29.2.tgz"
-  integrity sha512-/xc7rO2vlNEzbW0+DN9a+EbbAOMkFXwwjcKI5clkAe15LS2D1Ybgx2RvtkssxXrKkeJtT73Wddk4eFumYSDjQw==
+"@akord/akord-auth@0.30.44":
+  version "0.30.44"
+  resolved "https://registry.yarnpkg.com/@akord/akord-auth/-/akord-auth-0.30.44.tgz#5de854e6d96514ce9014aa565434a7184ad2dc34"
+  integrity sha512-OWcJat3q3o6kv8/9FgG3egk2/ZLx0bzHRT45Lpu5Dio3RL+/bupCNEt0nm/GOZbHl5MKhb8xy1kWtD5AyQxHfA==
   dependencies:
-    "@akord/crypto" "0.10.0"
+    "@akord/crypto" "0.21.56"
     amazon-cognito-identity-js "6.1.2"
+    memorystorage "^0.12.0"
+    ts-retry "^4.2.5"
 
-"@akord/akord-js@5.1.1":
-  version "5.1.1"
-  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-5.1.1.tgz#b79da99df1495cc30d2912487cc582deecf717c1"
-  integrity sha512-zaqObPr9qrQ5nd10fCbpeBTYiEFH5wxGgFlVAGDRyR6bhhELhysYRrbfBfOItEfTwXioSyPXwaHS3ziRjLp02A==
+"@akord/akord-js@5.11.0":
+  version "5.11.0"
+  resolved "https://registry.yarnpkg.com/@akord/akord-js/-/akord-js-5.11.0.tgz#8345d81414963560e7fe0641ebc8ab867d0d7b6a"
+  integrity sha512-JuvhrLIK8bs9ZI5Gx/038X7dvPa3YLxdU3Jbm4RGFFIKYGhzPaq/DOsEfxxHO7aTaVeXAdgcfUxKE/VKY2AIwQ==
   dependencies:
-    "@akord/akord-auth" "0.29.2"
-    "@akord/crypto" "0.20.4"
+    "@akord/akord-auth" "0.30.44"
+    "@akord/crypto" "0.21.56"
     "@akord/ts-cacheable" "1.0.13"
     "@esm2cjs/p-queue" "^7.3.0"
-    axios "^1.6.2"
+    axios "0.27.2"
     cross-fetch "^4.0.0"
     lodash "^4.17.21"
-    mime-types "^2.1.35"
     rxjs "^7.5.6"
     uuid "^8.3.2"
     web-streams-polyfill "^3.2.1"
@@ -37,29 +38,17 @@
     module-error "^1.0.2"
     run-parallel-limit "^1.1.0"
 
-"@akord/crypto@0.10.0":
-  version "0.10.0"
-  resolved "https://registry.npmjs.org/@akord/crypto/-/crypto-0.10.0.tgz"
-  integrity sha512-1C1djkZWIeT7QIAx6LYyPFi+VHMJHWS+MfTpkNL44V8ncAcgHuVDUhlvN7NLLDAryhGWPh91RVBUoGhR0zz9Qw==
+"@akord/crypto@0.21.56":
+  version "0.21.56"
+  resolved "https://registry.yarnpkg.com/@akord/crypto/-/crypto-0.21.56.tgz#aac764c738df288c9130f1fa5dd0749dbccbecb5"
+  integrity sha512-SPBZo41zMZPqgOuEeF114hyWyn7QL4LFFGqf52JeQCix2FByKzFPl/arFN7qs4DCMYl3otJ79k/3tRHcR0Y6DA==
   dependencies:
     "@akord/browser-level" "^1.0.2"
     bip39 "^3.1.0"
-    ethereum-cryptography "^1.2.0"
-    libsodium-wrappers "^0.7.11"
-    memory-level "^1.0.0"
-    reflect-metadata "^0.1.13"
-    tweetnacl "^1.0.3"
-
-"@akord/crypto@0.20.4":
-  version "0.20.4"
-  resolved "https://registry.npmjs.org/@akord/crypto/-/crypto-0.20.4.tgz"
-  integrity sha512-yFE8qzrqnoQbDePAAGO2Y5JejnU9walK1DNQ7ZywIzkdzaJ5knDYwOMzWylD5yXUON/d+bbZOfMtJfP8RuikrQ==
-  dependencies:
-    "@akord/browser-level" "^1.0.2"
-    bip39 "^3.1.0"
+    buffer "^6.0.3"
     ethereum-cryptography "^1.2.0"
     jssha "^3.3.1"
-    libsodium-wrappers "^0.7.11"
+    libsodium-wrappers "^0.7.13"
     memory-level "^1.0.0"
     reflect-metadata "^0.1.13"
     tweetnacl "^1.0.3"
@@ -2617,14 +2606,13 @@ available-typed-arrays@^1.0.5:
   resolved "https://registry.npmjs.org/available-typed-arrays/-/available-typed-arrays-1.0.5.tgz"
   integrity sha512-DMD0KiN46eipeziST1LPP/STfDU0sufISXmjSgvVsoU2tqxctQeASejWcfNtxYKqETM1UxQ8sp2OrSBWpHY6sw==
 
-axios@^1.6.2:
-  version "1.6.8"
-  resolved "https://registry.npmjs.org/axios/-/axios-1.6.8.tgz"
-  integrity sha512-v/ZHtJDU39mDpyBoFVkETcd/uNdxrWRrg3bKpOKzXFA6Bvqopts6ALSMU3y6ijYxbw2B+wPrIv46egTzJXCLGQ==
+axios@0.27.2:
+  version "0.27.2"
+  resolved "https://registry.yarnpkg.com/axios/-/axios-0.27.2.tgz#207658cc8621606e586c85db4b41a750e756d972"
+  integrity sha512-t+yRIyySRTp/wua5xEr+z1q60QmLq8ABsS5O9Me1AsE5dfKqgnCFzwiCZZ/cGNd1lq4/7akDWMxdhVlucjmnOQ==
   dependencies:
-    follow-redirects "^1.15.6"
+    follow-redirects "^1.14.9"
     form-data "^4.0.0"
-    proxy-from-env "^1.1.0"
 
 babel-jest@^27.5.1:
   version "27.5.1"
@@ -3573,9 +3561,9 @@ fn.name@1.x.x:
   resolved "https://registry.npmjs.org/fn.name/-/fn.name-1.1.0.tgz"
   integrity sha512-GRnmB5gPyJpAhTQdSZTSp9uaPSvl09KoYcMQtsB9rQoOmzs9dH6ffeccH+Z+cv6P68Hu5bC6JjRh4Ah/mHSNRw==
 
-follow-redirects@^1.15.6:
+follow-redirects@^1.14.9:
   version "1.15.6"
-  resolved "https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.15.6.tgz"
+  resolved "https://registry.yarnpkg.com/follow-redirects/-/follow-redirects-1.15.6.tgz#7f815c0cda4249c74ff09e95ef97c23b5fd0399b"
   integrity sha512-wWN62YITEaOpSK584EZXJafH1AGpO8RVgElfkuXbTOrPX4fIfOyEpW/CsiNd8JdYrAoOvafRTOEnvsO++qCqFA==
 
 for-each@^0.3.3:
@@ -4681,17 +4669,17 @@ levn@~0.3.0:
     prelude-ls "~1.1.2"
     type-check "~0.3.2"
 
-libsodium-wrappers@^0.7.11:
-  version "0.7.11"
-  resolved "https://registry.npmjs.org/libsodium-wrappers/-/libsodium-wrappers-0.7.11.tgz"
-  integrity sha512-SrcLtXj7BM19vUKtQuyQKiQCRJPgbpauzl3s0rSwD+60wtHqSUuqcoawlMDheCJga85nKOQwxNYQxf/CKAvs6Q==
+libsodium-wrappers@^0.7.13:
+  version "0.7.13"
+  resolved "https://registry.yarnpkg.com/libsodium-wrappers/-/libsodium-wrappers-0.7.13.tgz#83299e06ee1466057ba0e64e532777d2929b90d3"
+  integrity sha512-kasvDsEi/r1fMzKouIDv7B8I6vNmknXwGiYodErGuESoFTohGSKZplFtVxZqHaoQ217AynyIFgnOVRitpHs0Qw==
   dependencies:
-    libsodium "^0.7.11"
+    libsodium "^0.7.13"
 
-libsodium@^0.7.11:
-  version "0.7.11"
-  resolved "https://registry.npmjs.org/libsodium/-/libsodium-0.7.11.tgz"
-  integrity sha512-WPfJ7sS53I2s4iM58QxY3Inb83/6mjlYgcmZs7DJsvDlnmVUwNinBCi5vBT43P6bHRy01O4zsMU2CoVR6xJ40A==
+libsodium@^0.7.13:
+  version "0.7.13"
+  resolved "https://registry.yarnpkg.com/libsodium/-/libsodium-0.7.13.tgz#230712ec0b7447c57b39489c48a4af01985fb393"
+  integrity sha512-mK8ju0fnrKXXfleL53vtp9xiPq5hKM0zbDQtcxQIsSmxNgSxqCj6R7Hl9PkrNe2j29T4yoDaF7DJLK9/i5iWUw==
 
 lines-and-columns@^1.1.6:
   version "1.2.4"
@@ -4819,6 +4807,11 @@ memory-level@^1.0.0:
     functional-red-black-tree "^1.0.1"
     module-error "^1.0.1"
 
+memorystorage@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/memorystorage/-/memorystorage-0.12.0.tgz#582a3374d298e8352dc4512df0186c335d137018"
+  integrity sha512-8oAVcjcyCCqG2iYSXf7AhyESaHkodE3UUouMS6NhqoY2Bnb1xoPe3sdbf3ExufPGkFYi/HgP7SPer8SFsc6MYg==
+
 merge-stream@^2.0.0:
   version "2.0.0"
   resolved "https://registry.npmjs.org/merge-stream/-/merge-stream-2.0.0.tgz"
@@ -4837,7 +4830,7 @@ mime-db@1.52.0:
   resolved "https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz"
   integrity sha512-sPU4uV7dYlvtWJxwwxHD0PuihVNiE7TyAbQ5SWxDCB9mUYvOgroQOwYQQOKPJ8CIbE+1ETVlOoK1UC2nU3gYvg==
 
-mime-types@^2.1.12, mime-types@^2.1.35:
+mime-types@^2.1.12:
   version "2.1.35"
   resolved "https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz"
   integrity sha512-ZDY+bPm5zTTF+YpCrAU9nK0UgICYPT0QtT1NZWFv4s++TNkcgVaT0g6+4R2uI4MjQjzysHB1zxuWL50hzaeXiw==
@@ -5212,11 +5205,6 @@ prompts@^2.0.1:
   dependencies:
     kleur "^3.0.3"
     sisteransi "^1.0.5"
-
-proxy-from-env@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-1.1.0.tgz"
-  integrity sha512-D+zkORCbA9f1tdWRK0RaCR3GPv50cMxcrz4X8k5LTSUD1Dkw47mKJEZQNunItRTkWwgtaUSo1RVFRIG9ZXiFYg==
 
 psl@^1.1.33:
   version "1.9.0"
@@ -5853,6 +5841,11 @@ ts-node@^10.2.1:
     make-error "^1.1.1"
     v8-compile-cache-lib "^3.0.1"
     yn "3.1.1"
+
+ts-retry@^4.2.5:
+  version "4.2.5"
+  resolved "https://registry.yarnpkg.com/ts-retry/-/ts-retry-4.2.5.tgz#ee4638e66c68bb49da975aa4994d5f16bfb61bc2"
+  integrity sha512-dFBa4pxMBkt/bjzdBio8EwYfbAdycEAwe0KZgzlUKKwU9Wr1WErK7Hg9QLqJuDDYJXTW4KYZyXAyqYKOdO/ehA==
 
 tslib@^1.11.1:
   version "1.14.1"
