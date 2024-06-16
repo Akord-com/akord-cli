@@ -467,7 +467,8 @@ async function zipUploadHandler(argv: {
   spinner.start("Uploading zip...");
   const { sourceId } = await akord.zip.upload(
     vaultId,
-    filePath || (await askForFilePath()).filePath
+    filePath || (await askForFilePath()).filePath,
+    { parentId: parentId }
   );
   spinner.succeed("Zip successfully uploaded with id: " + sourceId);
   process.exit(0);
