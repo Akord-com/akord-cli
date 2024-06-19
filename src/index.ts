@@ -173,6 +173,7 @@ const manifestGenerateCommand = {
       .positional('vaultId', { describe: 'vault id' })
       .option('index', { describe: 'index file', default: 'index.html' })
       .option('manifest', { describe: 'manifest file, if provided, index param is dismissed', default: null })
+      .option('parentId', { describe: 'parent id', default: null })
   },
   handler: manifestGenerateHandler,
 };

@@ -900,14 +900,23 @@ async function vaultGetHandler(argv: { vaultId: string }) {
 }
 
 async function manifestGenerateHandler(
-  argv: { vaultId: string; index: string; manifest: JSON | Object },
+  argv: {
+    vaultId: string;
+    index: string;
+    manifest: JSON | Object;
+    parentId?: string;
+  },
   exit: boolean = true
 ) {
-  const { vaultId, index, manifest } = argv;
+  const { vaultId, index, manifest, parentId } = argv;
 
   const akord = await loadCredentials();
   spinner.start("Generating manifest...");
-  const { uri } = await akord.manifest.generate(vaultId, manifest, index);
+  const { uri } = await akord.manifest.generate(vaultId, {
+    indexName: index,
+    manifest: manifest,
+    parentId: parentId,
+  });
   spinner.succeed("Manifest successfully generated.");
   spinner.succeed(
     "Once the transaction is accepted on Arweave network (it takes 5-15 minutes on average), you can access it here:"
