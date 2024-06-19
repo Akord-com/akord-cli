@@ -39,7 +39,8 @@ import {
   stackDownloadHandler,
   diffHandler,
   displayError,
-  deployHandler
+  deployHandler,
+  zipUploadHandler
 } from './handlers';
 import './polyfill'
 import { logger, muteSpinner } from './logger';
@@ -172,8 +173,27 @@ const manifestGenerateCommand = {
       .positional('vaultId', { describe: 'vault id' })
       .option('index', { describe: 'index file', default: 'index.html' })
       .option('manifest', { describe: 'manifest file, if provided, index param is dismissed', default: null })
+      .option('parentId', { describe: 'parent id', default: null })
   },
   handler: manifestGenerateHandler,
+};
+
+const zipUploadCommand = {
+  command: 'zip:upload <vaultId>',
+  describe: 'upload a new zip from a file path',
+  builder: () => {
+    yargs
+      .positional('vaultId', { describe: 'vault id' })
+      .option("f", {
+        alias: "file-path",
+        describe: "file path"
+      })
+      .option("p", {
+        alias: "parent-id",
+        describe: "parent folder id, if null: root folder"
+      })
+  },
+  handler: zipUploadHandler,
 };
 
 const stackCreateCommand = {
@@ -578,6 +598,7 @@ yargs
   .command(<CommandModule><unknown>manifestGenerateCommand)
   .command(<CommandModule><unknown>diffCommand)
   .command(<CommandModule><unknown>syncCommand)
+  .command(<CommandModule><unknown>zipUploadCommand)
   .command(<CommandModule><unknown>stackCreateCommand)
   .command(<CommandModule><unknown>stackImportCommand)
   .command(<CommandModule><unknown>stackRenameCommand)
